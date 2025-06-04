@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { type CraftingRecipe, type CraftingIngredient, type RecipeOutput } from '../types/recipes';
+import type { CraftingRecipe, RecipeOutput, CraftingIngredient } from '../types/recipes';
 import { ALL_RECIPES } from '../data/recipes';
 import { useClickOutside } from '../hooks/useClickOutside';
 import {
@@ -20,11 +20,13 @@ import {
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import { SimpleTreeView as TreeView } from '@mui/x-tree-view/SimpleTreeView';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { MaterialWithAlternatives as MaterialAlternatives } from './MaterialWithAlternatives';
 
 interface CalculatedIngredient {
     itemName: string;
     quantity: number;
     isRawMaterial: boolean;
+    alternativeRecipes?: CraftingRecipe[];
 }
 
 interface CraftingAttempts {
@@ -75,17 +77,7 @@ interface RecipeTreeItem {
 
 const PARALLEL_SLOTS_PER_STRUCTURE = 10;
 
-const formatOutputs = (outputs: RecipeOutput[]): string => {
-    return outputs.map(output => {
-        const qtyStr = typeof output.quantity === 'number'
-            ? output.quantity.toString()
-            : `${output.quantity.min}-${output.quantity.max}`;
-        const chanceStr = output.chance !== undefined && output.chance < 1
-            ? ` (${Math.round(output.chance * 100)}% chance)`
-            : '';
-        return `${output.itemName}: ${qtyStr}${chanceStr}`;
-    }).join(', ');
-};
+
 
 const getAverageOutput = (output: RecipeOutput): number => {
     const qty = output.quantity;
@@ -98,8 +90,38 @@ const getMainOutput = (recipe: CraftingRecipe): RecipeOutput => {
     return recipe.outputs.find(o => !o.chance || o.chance === 1) ?? recipe.outputs[0];
 };
 
-const getRecipeForItem = (itemName: string): CraftingRecipe | undefined => {
-    return ALL_RECIPES.find(recipe => recipe.outputs.some(output => output.itemName === itemName));
+const getRecipesForItem = (itemName: string): CraftingRecipe[] => {
+    return ALL_RECIPES.filter(recipe => recipe.outputs.some(output => output.itemName === itemName));
+};
+
+const getBestRecipeForItem = (itemName: string, preferredType?: 'active' | 'passive'): CraftingRecipe[] => {
+    const recipes = getRecipesForItem(itemName);
+    if (recipes.length === 0) return [];
+
+    // Sort recipes based on multiple criteria
+    return recipes.sort((a, b) => {
+        // 1. Prefer the specified type if provided
+        if (preferredType) {
+            if (a.recipeType === preferredType && b.recipeType !== preferredType) return -1;
+            if (b.recipeType === preferredType && a.recipeType !== preferredType) return 1;
+        }
+
+        // 2. Compare efficiency (output per effort/time)
+        const getEfficiency = (recipe: CraftingRecipe) => {
+            const mainOutput = getMainOutput(recipe);
+            const avgOutput = getAverageOutput(mainOutput);
+            return recipe.recipeType === 'active'
+                ? avgOutput / recipe.effort
+                : avgOutput / recipe.seconds;
+        };
+
+        const efficiencyA = getEfficiency(a);
+        const efficiencyB = getEfficiency(b);
+        if (efficiencyA !== efficiencyB) return efficiencyB - efficiencyA;
+
+        // 3. If efficiencies are equal, prefer simpler recipes (fewer ingredients)
+        return a.ingredients.length - b.ingredients.length;
+    });
 };
 
 const calculateCraftingAttempts = (recipe: CraftingRecipe, targetQuantity: number): CraftingAttempts => {
@@ -189,9 +211,9 @@ const calculateTotals = (
         }
 
         r.ingredients.forEach(ingredient => {
-            const subRecipe = getRecipeForItem(ingredient.itemName);
-            if (subRecipe) {
-                processRecipe(subRecipe, ingredient.quantity * attempts, newChain);
+            const recipes = getRecipesForItem(ingredient.itemName);
+            if (recipes.length > 0) {
+                processRecipe(recipes[0], ingredient.quantity * attempts, newChain);
             }
         });
     };
@@ -210,9 +232,7 @@ const calculateIngredientsRecursive = (
 
     if (recipeChain.has(mainOutput.itemName)) {
         const warningMsg = `Circular recipe detected: ${mainOutput.itemName} is part of a crafting loop`;
-        if (!warnings.includes(warningMsg)) {
-            warnings.push(warningMsg);
-        }
+        warnings.push(warningMsg);
         return [[{
             itemName: mainOutput.itemName,
             quantity: amount,
@@ -220,32 +240,26 @@ const calculateIngredientsRecursive = (
         }], warnings];
     }
 
-    const newChain = new Set(recipeChain);
-    newChain.add(mainOutput.itemName);
-
+    const newChain = new Set(recipeChain).add(mainOutput.itemName);
     const multiplier = Math.ceil(amount / getAverageOutput(mainOutput));
+    
     const ingredients = recipe.ingredients.flatMap(ingredient => {
-        const subRecipe = getRecipeForItem(ingredient.itemName);
-        if (subRecipe) {
-            const intermediateItem = {
+        const recipeOptions = getBestRecipeForItem(ingredient.itemName);
+        if (recipeOptions.length === 0) {
+            return [{
                 itemName: ingredient.itemName,
                 quantity: ingredient.quantity * multiplier,
-                isRawMaterial: false
-            };
-
-            const [subIngredients, subWarnings] = calculateIngredientsRecursive(
-                subRecipe,
-                ingredient.quantity * multiplier,
-                newChain
-            );
-            warnings.push(...subWarnings);
-
-            return [intermediateItem, ...subIngredients];
+                isRawMaterial: true,
+                alternativeRecipes: []
+            }];
         }
+
+        // Add this ingredient as raw material with alternatives
         return [{
             itemName: ingredient.itemName,
             quantity: ingredient.quantity * multiplier,
-            isRawMaterial: true
+            isRawMaterial: true,
+            alternativeRecipes: recipeOptions
         }];
     });
 
@@ -253,6 +267,21 @@ const calculateIngredientsRecursive = (
         const existing = acc.find(item => item.itemName === curr.itemName);
         if (existing) {
             existing.quantity += curr.quantity;
+            // Merge alternative recipes, removing duplicates
+            if (curr.alternativeRecipes) {
+                existing.alternativeRecipes = existing.alternativeRecipes || [];
+                curr.alternativeRecipes.forEach(recipe => {
+                    if (!existing.alternativeRecipes!.some(r => r.recipeName === recipe.recipeName)) {
+                        existing.alternativeRecipes!.push(recipe);
+                    }
+                });
+                // Sort alternatives by efficiency
+                existing.alternativeRecipes.sort((a, b) => {
+                    const effA = getAverageOutput(getMainOutput(a)) / (a.recipeType === 'active' ? a.effort : a.seconds);
+                    const effB = getAverageOutput(getMainOutput(b)) / (b.recipeType === 'active' ? b.effort : b.seconds);
+                    return effB - effA;
+                });
+            }
         } else {
             acc.push({ ...curr });
         }
@@ -262,13 +291,48 @@ const calculateIngredientsRecursive = (
     return [consolidatedIngredients, warnings];
 };
 
+const consolidateIngredients = (ingredients: CalculatedIngredient[]): CalculatedIngredient[] => {
+    return ingredients.reduce((acc: CalculatedIngredient[], curr: CalculatedIngredient) => {
+        const existing = acc.find(item => item.itemName === curr.itemName);
+        if (existing) {
+            existing.quantity += curr.quantity;
+            // Merge alternative recipes, removing duplicates
+            if (curr.alternativeRecipes) {
+                existing.alternativeRecipes = existing.alternativeRecipes || [];
+                curr.alternativeRecipes.forEach((recipe: CraftingRecipe) => {
+                    if (!existing.alternativeRecipes!.some((r: CraftingRecipe) => r.recipeName === recipe.recipeName)) {
+                        existing.alternativeRecipes!.push(recipe);
+                    }
+                });
+                // Sort alternatives by efficiency
+                existing.alternativeRecipes.sort((a: CraftingRecipe, b: CraftingRecipe) => {
+                    const effA = getAverageOutput(getMainOutput(a)) / (a.recipeType === 'active' ? a.effort : a.seconds);
+                    const effB = getAverageOutput(getMainOutput(b)) / (b.recipeType === 'active' ? b.effort : b.seconds);
+                    return effB - effA;
+                });
+            }
+        } else {
+            // For new ingredients, sort alternatives if they exist
+            if (curr.alternativeRecipes) {
+                curr.alternativeRecipes.sort((a: CraftingRecipe, b: CraftingRecipe) => {
+                    const effA = getAverageOutput(getMainOutput(a)) / (a.recipeType === 'active' ? a.effort : a.seconds);
+                    const effB = getAverageOutput(getMainOutput(b)) / (b.recipeType === 'active' ? b.effort : b.seconds);
+                    return effB - effA;
+                });
+            }
+            acc.push({ ...curr });
+        }
+        return acc;
+    }, []);
+};
+
 const buildRecipeTree = (
     itemName: string,
     quantity: number,
     visitedItems: Set<string> = new Set(),
     currentChain: Set<string> = new Set()
-): RecipeTreeItem => {
-    const id = `${itemName}-${Math.random().toString(36).substr(2, 9)}`; const recipe = getRecipeForItem(itemName);
+): RecipeTreeItem => {    const id = `${itemName}-${Math.random().toString(36).substr(2, 9)}`;
+    const recipe = getBestRecipeForItem(itemName)[0];
     const children: RecipeTreeItem[] = [];
 
     if (recipe && !visitedItems.has(itemName)) {
@@ -280,63 +344,102 @@ const buildRecipeTree = (
         visitedItems.add(itemName);
         const newChain = new Set(currentChain).add(itemName);
         const mainOutput = getMainOutput(recipe);
-        recipe.ingredients.forEach((ingredient: CraftingIngredient) => {
-            const subRecipe = getRecipeForItem(ingredient.itemName);
+
+        recipe.ingredients.forEach(ingredient => {
             const multiplier = Math.ceil(quantity / getAverageOutput(mainOutput));
-            if (subRecipe) {
-                children.push(
-                    buildRecipeTree(
-                        ingredient.itemName,
-                        ingredient.quantity * multiplier,
-                        visitedItems,
-                        newChain
-                    )
-                );
-            } else {
-                // This is a raw material
-                children.push({
-                    id: `${ingredient.itemName}-${Math.random().toString(36).substr(2, 9)}`,
-                    name: ingredient.itemName,
-                    quantity: ingredient.quantity * multiplier,
-                    children: []
-                });
-            }
+            children.push(
+                buildRecipeTree(
+                    ingredient.itemName,
+                    ingredient.quantity * multiplier,
+                    visitedItems,
+                    newChain
+                )
+            );
         });
     }
 
     return { id, name: itemName, quantity, recipe, children };
 };
 
-const RecipeTreeView = ({ root }: { root: RecipeTreeItem }) => {
-    const renderTree = (node: RecipeTreeItem) => (
-        <TreeItem
-            key={node.id}
-            itemId={node.id}
-            label={<Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
-                <Typography>
-                    {node.name} ({node.quantity})
-                    {node.recipe ? (
-                        <Typography component="span" color="text.secondary" sx={{ ml: 1 }}>
-                            via {node.recipe.recipeType === 'active' ? node.recipe.profession : node.recipe.structure}
-                        </Typography>
-                    ) : node.children.length === 0 && (
-                        <Typography component="span" color="success.main" sx={{ ml: 1 }}>
-                            (raw material)
-                        </Typography>
-                    )}
-                </Typography>
-            </Box>
-            }
-        >
-            {node.children.map((child) => renderTree(child))}
-        </TreeItem>
-    );
+interface RecipeTreeViewProps {
+    root: RecipeTreeItem;
+    recipeChoices: Map<string, CraftingRecipe>;
+    onRecipeSelect: (itemName: string, recipe: CraftingRecipe) => void;
+}
+
+const RecipeTreeView: React.FC<RecipeTreeViewProps> = ({ root, recipeChoices, onRecipeSelect }) => {
+    const renderTree = (node: RecipeTreeItem) => {
+        // Get recipe alternatives for this node
+        const alternatives = node.name ? getBestRecipeForItem(node.name) : [];
+        const selectedRecipe = node.name ? recipeChoices.get(node.name) : undefined;
+
+        return (
+            <TreeItem
+                key={node.id}
+                itemId={node.id}
+                label={
+                    <Box sx={{ display: 'flex', flexDirection: 'column', py: 0.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography>
+                                {node.name} ({node.quantity})
+                                {node.recipe ? (
+                                    <Typography component="span" color="text.secondary" sx={{ ml: 1 }}>
+                                        via {node.recipe.recipeType === 'active' ? node.recipe.profession : node.recipe.structure}
+                                    </Typography>
+                                ) : node.children.length === 0 && alternatives.length > 0 ? (
+                                    <Typography component="span" color="info.main" sx={{ ml: 1 }}>
+                                        ({alternatives.length} recipe{alternatives.length > 1 ? 's' : ''} available)
+                                    </Typography>
+                                ) : node.children.length === 0 && (
+                                    <Typography component="span" color="success.main" sx={{ ml: 1 }}>
+                                        (raw material)
+                                    </Typography>
+                                )}
+                            </Typography>
+                        </Box>
+                        {alternatives.length > 1 && node.name && (
+                            <Box sx={{ mt: 1, pl: 2 }}>
+                                {alternatives.map((alt: CraftingRecipe, idx: number) => (
+                                    <Typography
+                                        key={idx}
+                                        variant="caption"
+                                        color={selectedRecipe?.recipeName === alt.recipeName ? "primary" : "text.secondary"}
+                                        sx={{ 
+                                            display: 'block', 
+                                            cursor: 'pointer',
+                                            pl: 1,
+                                            borderLeft: (theme) => 
+                                                selectedRecipe?.recipeName === alt.recipeName 
+                                                    ? `2px solid ${theme.palette.primary.main}`
+                                                    : '2px solid transparent',
+                                            '&:hover': { 
+                                                color: 'primary.main',
+                                                backgroundColor: 'action.hover'
+                                            }
+                                        }}
+                                        onClick={() => {
+                                            if (node.name) {
+                                                onRecipeSelect(node.name, alt);
+                                            }
+                                        }}
+                                    >
+                                        {alt.recipeType === 'active' ? alt.profession : alt.structure} •{' '}
+                                        {alt.ingredients.map(i => `${i.quantity} ${i.itemName}`).join(', ')}
+                                    </Typography>
+                                ))}
+                            </Box>
+                        )}
+                    </Box>
+                }
+            >
+                {node.children.map((child) => renderTree(child))}
+            </TreeItem>
+        );
+    };
 
     return (
         <TreeView
             aria-label="recipe tree"
-            // defaultExpandIcon={<ChevronRightIcon />}
-            // defaultCollapseIcon={<ExpandMoreIcon />}
             sx={{ flexGrow: 1 }}
         >
             {renderTree(root)}
@@ -344,8 +447,13 @@ const RecipeTreeView = ({ root }: { root: RecipeTreeItem }) => {
     );
 };
 
-export const RecipeCalculator = () => {
+
+
+// No longer needed - using Map<string, CraftingRecipe> instead
+
+export const RecipeCalculator: React.FC = () => {
     const [selectedRecipe, setSelectedRecipe] = useState<CraftingRecipe | null>(null);
+    const [recipeChoices, setRecipeChoices] = useState<Map<string, CraftingRecipe>>(new Map());
     const [quantity, setQuantity] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -356,46 +464,107 @@ export const RecipeCalculator = () => {
         warnings: string[];
     } | null>(null);
 
-    const searchContainerRef = useClickOutside(() => setIsDropdownOpen(false));    // Group recipes by their main output item
+    const searchContainerRef = useClickOutside(() => setIsDropdownOpen(false));
+
+    // Group recipes by their main output item
     const groupedRecipes = ALL_RECIPES.reduce((acc, recipe) => {
         const mainOutput = getMainOutput(recipe);
         const key = mainOutput.itemName;
-        if (!acc[key]) {
-            acc[key] = [];
+        if (!acc.has(key)) {
+            acc.set(key, []);
         }
-        acc[key].push(recipe);
+        acc.get(key)!.push(recipe);
         return acc;
-    }, {} as Record<string, CraftingRecipe[]>);
+    }, new Map<string, CraftingRecipe[]>());
 
     // Filter recipes based on search term
-    const filteredRecipes = Object.entries(groupedRecipes)
+    const filteredRecipes = Array.from(groupedRecipes.entries())
         .filter(([itemName]) => itemName.toLowerCase().includes(searchTerm.toLowerCase()))
         .reduce((acc, [itemName, recipes]) => {
-            acc[itemName] = recipes;
+            acc.set(itemName, recipes);
             return acc;
-        }, {} as Record<string, CraftingRecipe[]>);
+        }, new Map<string, CraftingRecipe[]>());
 
-    // Check for duplicate recipes
-    useEffect(() => {
+    const getSelectedRecipeForItem = (itemName: string): CraftingRecipe | undefined => {
+        return recipeChoices.get(itemName) || getBestRecipeForItem(itemName)[0];
+    };
+
+    const handleRecipeChoice = (itemName: string, recipe: CraftingRecipe) => {
+        setRecipeChoices(prev => new Map(prev).set(itemName, recipe));
+    };
+
+    // Calculate ingredients recursively with recipe choices
+    const calculateIngredientsWithChoices = (
+        recipe: CraftingRecipe,
+        amount: number,
+        recipeChain: Set<string> = new Set()
+    ): [CalculatedIngredient[], string[]] => {
         const warnings: string[] = [];
-        const recipeNames = new Set<string>();
-        ALL_RECIPES.forEach(recipe => {
-            if (recipeNames.has(recipe.recipeName)) {
-                warnings.push(`Duplicate recipe name found: ${recipe.recipeName}`);
-            }
-            recipeNames.add(recipe.recipeName);
-        });
+        const mainOutput = getMainOutput(recipe);
 
-        if (warnings.length > 0) {
-            console.warn('Recipe warnings:', warnings);
+        if (recipeChain.has(mainOutput.itemName)) {
+            warnings.push(`Circular recipe detected: ${mainOutput.itemName} is part of a crafting loop`);
+            return [[{
+                itemName: mainOutput.itemName,
+                quantity: amount,
+                isRawMaterial: true
+            }], warnings];
         }
-    }, []);
 
-    // Update results when recipe or quantity changes
+        const newChain = new Set(recipeChain).add(mainOutput.itemName);
+        const multiplier = Math.ceil(amount / getAverageOutput(mainOutput));
+
+        let ingredients: CalculatedIngredient[] = [];
+
+        for (const ingredient of recipe.ingredients) {
+            const recipeOptions = getBestRecipeForItem(ingredient.itemName);
+            const selectedRecipe = getSelectedRecipeForItem(ingredient.itemName);
+            
+            if (selectedRecipe) {
+                const [subIngredients, subWarnings] = calculateIngredientsWithChoices(
+                    selectedRecipe,
+                    ingredient.quantity * multiplier,
+                    newChain
+                );
+                ingredients = ingredients.concat(subIngredients);
+                warnings.push(...subWarnings);
+            } else {
+                ingredients.push({
+                    itemName: ingredient.itemName,
+                    quantity: ingredient.quantity * multiplier,
+                    isRawMaterial: true,
+                    alternativeRecipes: recipeOptions
+                });
+            }
+        }
+
+        // Consolidate ingredients
+        const consolidated = new Map<string, CalculatedIngredient>();
+        for (const ingredient of ingredients) {
+            const existing = consolidated.get(ingredient.itemName);
+            if (existing) {
+                existing.quantity += ingredient.quantity;
+                if (ingredient.alternativeRecipes) {
+                    existing.alternativeRecipes = existing.alternativeRecipes || [];
+                    for (const recipe of ingredient.alternativeRecipes) {
+                        if (!existing.alternativeRecipes.some(r => r.recipeName === recipe.recipeName)) {
+                            existing.alternativeRecipes.push(recipe);
+                        }
+                    }
+                }
+            } else {
+                consolidated.set(ingredient.itemName, { ...ingredient });
+            }
+        }
+
+        return [Array.from(consolidated.values()), warnings];
+    };
+
+    // Update results when recipe, quantity, or choices change
     useEffect(() => {
         if (selectedRecipe) {
             const [totals, totalWarnings] = calculateTotals(selectedRecipe, quantity);
-            const [ingredients, ingredientWarnings] = calculateIngredientsRecursive(selectedRecipe, quantity);
+            const [ingredients, ingredientWarnings] = calculateIngredientsWithChoices(selectedRecipe, quantity);
             const allWarnings = [...new Set([...totalWarnings, ...ingredientWarnings])];
 
             setCalculatedResults({
@@ -403,14 +572,9 @@ export const RecipeCalculator = () => {
                 ingredients,
                 warnings: allWarnings
             });
-
-            if (allWarnings.length > 0) {
-                setRecipeWarnings(allWarnings);
-            } else {
-                setRecipeWarnings([]);
-            }
+            setRecipeWarnings(allWarnings.length > 0 ? allWarnings : []);
         }
-    }, [selectedRecipe, quantity]);
+    }, [selectedRecipe, quantity, recipeChoices]);
 
     return (
         <Box>
@@ -429,8 +593,7 @@ export const RecipeCalculator = () => {
                     }}
                     onFocus={() => setIsDropdownOpen(true)}
                     placeholder="Type to search recipes..."
-                />
-                {isDropdownOpen && Object.keys(filteredRecipes).length > 0 && (
+                />                {isDropdownOpen && filteredRecipes.size > 0 && (
                     <Paper
                         sx={{
                             position: 'absolute',
@@ -443,7 +606,7 @@ export const RecipeCalculator = () => {
                         elevation={3}
                     >
                         <List>
-                            {Object.entries(filteredRecipes).map(([itemName, recipes]) => (
+                            {Array.from(filteredRecipes.entries()).map(([itemName, recipes]) => (
                                 <Box key={itemName}>
                                     <ListItem sx={{ flexDirection: 'column', alignItems: 'stretch' }}>                                        <ListItemText
                                         primary={itemName}
@@ -454,8 +617,7 @@ export const RecipeCalculator = () => {
                                             }
                                         }}
                                     />
-                                        <List>
-                                            {recipes.map((recipe) => (<ListItem
+                                        <List>                                            {recipes.map((recipe: CraftingRecipe) => (<ListItem
                                                 key={recipe.recipeName}
                                                 component={'button'}
                                                 onClick={() => {
@@ -494,8 +656,7 @@ export const RecipeCalculator = () => {
                                                                 display: 'block',
                                                                 mt: 0.5
                                                             }}
-                                                        >
-                                                            Using: {recipe.ingredients.map(i =>
+                                                        >                                                            Using: {recipe.ingredients.map((i: CraftingIngredient) =>
                                                                 `${i.quantity} ${i.itemName}`).join(', ')}
                                                         </Typography>
                                                     </Box>
@@ -533,7 +694,7 @@ export const RecipeCalculator = () => {
                                 Outputs:
                             </Typography>
                             <Box sx={{ pl: 2 }}>
-                                {selectedRecipe.outputs.map((output, index) => (
+                                {selectedRecipe.outputs.map((output: RecipeOutput, index: number) => (
                                     <Typography key={index} variant="body2">
                                         {output.itemName}: {
                                             typeof output.quantity === 'number'
@@ -633,27 +794,31 @@ export const RecipeCalculator = () => {
                                 </Accordion>
                             )}
                         </Box>
-                    </Paper>                    <Paper sx={{ p: 3 }}>
-                        <Box sx={{ mb: 4 }}>
-                            <Typography variant="h6" gutterBottom>Raw Materials Needed</Typography>
-                            <List>
-                                {calculatedResults.ingredients
-                                    .filter((ingredient: CalculatedIngredient) => ingredient.isRawMaterial)
-                                    .map((ingredient: CalculatedIngredient) => (
-                                        <ListItem key={ingredient.itemName}>
-                                            <ListItemText
-                                                primary={`${ingredient.itemName}: ${ingredient.quantity}`}
-                                                sx={{ color: 'success.main' }}
-                                            />
-                                        </ListItem>
-                                    ))}
-                            </List>
-                        </Box>
+                    </Paper>                    <Paper sx={{ p: 3 }}>                        <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" gutterBottom>Raw Materials Needed</Typography>
+                        <List>
+                            {calculatedResults.ingredients
+                                .filter((ingredient: CalculatedIngredient) => ingredient.isRawMaterial)
+                                .map((ingredient: CalculatedIngredient) => (
+                                    <MaterialAlternatives
+                                        key={ingredient.itemName}
+                                        itemName={ingredient.itemName}
+                                        quantity={ingredient.quantity}
+                                        alternativeRecipes={ingredient.alternativeRecipes}
+                                        onSelectAlternative={(recipe) => {
+                                            handleRecipeChoice(ingredient.itemName, recipe);
+                                        }}
+                                    />
+                                ))}
+                        </List>
+                    </Box>
 
                         <Box>
                             <Typography variant="h6" gutterBottom>Recipe Tree</Typography>
                             <RecipeTreeView
                                 root={buildRecipeTree(getMainOutput(selectedRecipe).itemName, quantity)}
+                                recipeChoices={recipeChoices}
+                                onRecipeSelect={handleRecipeChoice}
                             />
                         </Box>
                     </Paper>

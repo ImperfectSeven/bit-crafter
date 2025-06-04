@@ -105,13 +105,16 @@ export const tailoringRecipes = addProfessionRecipes(PROFESSIONS.Tailoring).add(
         ingredients: [
             { itemName: 'Refined Rough Cloth', quantity: 100 },
         ],
-    },
+    }
+])
+// Add custom recipes
+.add(TIERS.Tier1, [
     {
         recipeName: 'Rough Woven Set (custom)',
         outputs: [
             { itemName: 'Rough Woven Set (custom)', quantity: 1 },
         ],
-        effort: 100,
+        effort: 0,
         ingredients: [
            { itemName: 'Rough Woven Cap', quantity: 1 },
             { itemName: 'Rough Woven Shirt', quantity: 1 },

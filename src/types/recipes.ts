@@ -483,6 +483,226 @@ export const SAMPLE_RECIPES: CraftingRecipe[] = [
         ]
     },
     // #endregion Tier 1 Armors
+    // #region Tier 1 Tools
+    {
+        recipeType: 'active',
+        outputItem: 'Ferralith Axe',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },
+    {
+        recipeType: 'active',
+        outputItem: 'Ferralith Chisel',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },
+    {
+        recipeType: 'active',
+        outputItem: 'Ferralith Hoe',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },
+    {
+        recipeType: 'active',
+        outputItem: 'Ferralith Mace',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 5 },
+            { itemName: 'Rough Rope', quantity: 1 },
+            { itemName: 'Rough Plank', quantity: 1 },
+            { itemName: 'Rough Leather', quantity: 1 },
+        ]
+    },
+    {
+        recipeType: 'active',
+        outputItem: 'Ferralith Quill',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },
+    {
+        recipeType: 'active',
+        outputItem: 'Ferralith Saw',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },
+    {
+        recipeType: 'active',
+        outputItem: 'Ferralith Shortsword',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 5 },
+            { itemName: 'Rough Rope', quantity: 1 },
+            { itemName: 'Rough Plank', quantity: 1 },
+            { itemName: 'Rough Leather', quantity: 1 },
+        ]
+    },{
+        recipeType: 'active',
+        outputItem: 'Ferralith Bow',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },
+    {
+        recipeType: 'active',
+        outputItem: 'Ferralith Claymore',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 5 },
+            { itemName: 'Rough Rope', quantity: 1 },
+            { itemName: 'Rough Plank', quantity: 1 },
+            { itemName: 'Rough Leather', quantity: 1 },
+        ]
+    },
+    {
+        recipeType: 'active',
+        outputItem: 'Ferralith Hammer',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },
+    {
+        recipeType: 'active',
+        outputItem: 'Ferralith Knife',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },{
+        recipeType: 'active',
+        outputItem: 'Ferralith Machete',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },{
+        recipeType: 'active',
+        outputItem: 'Ferralith Pickaxe',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },{
+        recipeType: 'active',
+        outputItem: 'Ferralith Rod',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },{
+        recipeType: 'active',
+        outputItem: 'Ferralith Scissors',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 4 },
+            { itemName: 'Rough Rope', quantity: 2 },
+            { itemName: 'Rough Plank', quantity: 2 },
+            { itemName: 'Rough Leather', quantity: 2 },
+        ]
+    },{
+        recipeType: 'active',
+        outputItem: 'Ferralith Spear & Shield',
+        effort: 0,
+        profession: PROFESSIONS.Smithing,
+        outputQuantity: 1,
+        hasVariableOutput: false,
+        ingredients: [
+            { itemName: 'Ferralith Ingot', quantity: 5 },
+            { itemName: 'Rough Rope', quantity: 1 },
+            { itemName: 'Rough Plank', quantity: 1 },
+            { itemName: 'Rough Leather', quantity: 1 },
+        ]
+    },
+    // #endregion Tier 1 Tools
     {
         recipeType: 'active',
         outputItem: 'Rough Leather',
@@ -509,7 +729,7 @@ export const SAMPLE_RECIPES: CraftingRecipe[] = [
     {
         recipeType: 'active',
         outputItem: 'Rough Cleaned Pelt',
-        effort: 0,
+        effort: 50,
         profession: PROFESSIONS.Leatherworking,
         outputQuantity: 1,
         hasVariableOutput: false,
@@ -520,7 +740,7 @@ export const SAMPLE_RECIPES: CraftingRecipe[] = [
     {
         recipeType: 'active',
         outputItem: 'Rough Raw Pelt',
-        effort: 0,
+        effort: 50,
         profession: PROFESSIONS.Hunting,
         outputQuantity: 2,
         hasVariableOutput: false,
@@ -531,7 +751,7 @@ export const SAMPLE_RECIPES: CraftingRecipe[] = [
     {
         recipeType: 'active',
         outputItem: 'Basic Raw Meat',
-        effort: 0,
+        effort: 50,
         profession: PROFESSIONS.Hunting,
         outputQuantity: 4,
         hasVariableOutput: false,
@@ -542,7 +762,7 @@ export const SAMPLE_RECIPES: CraftingRecipe[] = [
     {
         recipeType: 'active',
         outputItem: 'Rough Animal Hair',
-        effort: 0,
+        effort: 50,
         profession: PROFESSIONS.Hunting,
         outputQuantity: { min: 0, max: 1 },
         hasVariableOutput: true,
@@ -553,7 +773,7 @@ export const SAMPLE_RECIPES: CraftingRecipe[] = [
     {
         recipeType: 'active',
         outputItem: 'Basic Tannin',
-        effort: 0,
+        effort: 100,
         profession: PROFESSIONS.Leatherworking,
         outputQuantity: 3,
         hasVariableOutput: false,
@@ -565,7 +785,7 @@ export const SAMPLE_RECIPES: CraftingRecipe[] = [
     {
         recipeType: 'active',
         outputItem: 'Rough Tree Bark',
-        effort: 0,
+        effort: 100,
         profession: PROFESSIONS.Forestry,
         outputQuantity: 4,
         hasVariableOutput: false,
@@ -576,7 +796,7 @@ export const SAMPLE_RECIPES: CraftingRecipe[] = [
     {
         recipeType: 'active',
         outputItem: 'Water Bucket',
-        effort: 0,
+        effort: 1,
         profession: PROFESSIONS.Cooking,
         outputQuantity: 1,
         hasVariableOutput: false,

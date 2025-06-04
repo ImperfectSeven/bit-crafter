@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { type CraftingRecipe, SAMPLE_RECIPES } from '../types/recipes';
+import { type CraftingRecipe, type CraftingIngredient, SAMPLE_RECIPES } from '../types/recipes';
 import { useClickOutside } from '../hooks/useClickOutside';
 import {
     Typography,
@@ -15,7 +15,10 @@ import {
     Chip,
     Alert,
 } from '@mui/material';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
+import { SimpleTreeView as TreeView } from '@mui/x-tree-view/SimpleTreeView';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 interface CalculatedIngredient {
     itemName: string;
@@ -61,6 +64,106 @@ interface CraftingTotals {
     structureUsage: StructureUsage[];
 }
 
+interface RecipeTreeItem {
+    id: string;
+    name: string;
+    quantity: number;
+    recipe?: CraftingRecipe;
+    children: RecipeTreeItem[];
+}
+
+const getAverageOutput = (outputQty: number | { min: number; max: number }): number => {
+    if (typeof outputQty === 'number') {
+        return outputQty;
+    }
+    return (outputQty.min + outputQty.max) / 2;
+};
+
+const getRecipeForItem = (itemName: string): CraftingRecipe | undefined => {
+    return SAMPLE_RECIPES.find(recipe => recipe.outputItem === itemName);
+};
+
+const buildRecipeTree = (
+    itemName: string,
+    quantity: number,
+    visitedItems: Set<string> = new Set(),
+    currentChain: Set<string> = new Set()
+): RecipeTreeItem => {
+    const id = `${itemName}-${Math.random().toString(36).substr(2, 9)}`;
+    const recipe = getRecipeForItem(itemName);
+    const children: RecipeTreeItem[] = [];
+
+    if (recipe && !visitedItems.has(itemName)) {
+        // Check for circular dependencies
+        if (currentChain.has(itemName)) {
+            return { id, name: itemName, quantity, children: [] };
+        }
+
+        visitedItems.add(itemName);
+        const newChain = new Set(currentChain).add(itemName);        recipe.ingredients.forEach((ingredient: CraftingIngredient) => {
+            const subRecipe = getRecipeForItem(ingredient.itemName);
+            const multiplier = Math.ceil(quantity / getAverageOutput(recipe.outputQuantity));
+            if (subRecipe) {
+                children.push(
+                    buildRecipeTree(
+                        ingredient.itemName,
+                        ingredient.quantity * multiplier,
+                        visitedItems,
+                        newChain
+                    )
+                );
+            } else {
+                // This is a raw material
+                children.push({
+                    id: `${ingredient.itemName}-${Math.random().toString(36).substr(2, 9)}`,
+                    name: ingredient.itemName,
+                    quantity: ingredient.quantity * multiplier,
+                    children: []
+                });
+            }
+        });
+    }
+
+    return { id, name: itemName, quantity, recipe, children };
+};
+
+const RecipeTreeView = ({ root }: { root: RecipeTreeItem }) => {
+    const renderTree = (node: RecipeTreeItem) => (
+        <TreeItem
+            key={node.id}
+            itemId={node.id}
+            label={                <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
+                    <Typography>
+                        {node.name} ({node.quantity})
+                        {node.recipe ? (
+                            <Typography component="span" color="text.secondary" sx={{ ml: 1 }}>
+                                via {node.recipe.recipeType === 'active' ? node.recipe.profession : node.recipe.structure}
+                            </Typography>
+                        ) : node.children.length === 0 && (
+                            <Typography component="span" color="success.main" sx={{ ml: 1 }}>
+                                (raw material)
+                            </Typography>
+                        )}
+                    </Typography>
+                </Box>
+            }
+        >
+            {node.children.map((child) => renderTree(child))}
+        </TreeItem>
+    );
+
+    return (
+        <TreeView
+            aria-label="recipe tree"
+            // defaultExpandIcon={<ChevronRightIcon />}
+            // defaultCollapseIcon={<ExpandMoreIcon />}
+            sx={{ flexGrow: 1 }}
+        >
+            {renderTree(root)}
+        </TreeView>
+    );
+};
+
 export const RecipeCalculator = () => {
     const [selectedRecipe, setSelectedRecipe] = useState<CraftingRecipe | null>(null);
     const [quantity, setQuantity] = useState(1);
@@ -80,13 +183,6 @@ export const RecipeCalculator = () => {
     const filteredRecipes = SAMPLE_RECIPES.filter(recipe => 
         recipe.outputItem.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    const getAverageOutput = (outputQty: number | { min: number; max: number }): number => {
-        if (typeof outputQty === 'number') {
-            return outputQty;
-        }
-        return (outputQty.min + outputQty.max) / 2;
-    };
 
     const calculateCraftingAttempts = (recipe: CraftingRecipe, targetQuantity: number): CraftingAttempts => {
         if (typeof recipe.outputQuantity === 'number') {
@@ -434,9 +530,7 @@ export const RecipeCalculator = () => {
                                 </Accordion>
                             )}
                         </Box>
-                    </Paper>
-
-                    <Paper sx={{ p: 3 }}>
+                    </Paper>                    <Paper sx={{ p: 3 }}>
                         <Box sx={{ mb: 4 }}>
                             <Typography variant="h6" gutterBottom>Raw Materials Needed</Typography>
                             <List>
@@ -454,19 +548,10 @@ export const RecipeCalculator = () => {
                         </Box>
 
                         <Box>
-                            <Typography variant="h6" gutterBottom>Intermediate Items</Typography>
-                            <List>
-                                {calculatedResults.ingredients
-                                    .filter((ingredient: CalculatedIngredient) => !ingredient.isRawMaterial)
-                                    .map((ingredient: CalculatedIngredient) => (
-                                        <ListItem key={ingredient.itemName}>
-                                            <ListItemText 
-                                                primary={`${ingredient.itemName}: ${ingredient.quantity}`}
-                                                sx={{ color: 'info.main' }}
-                                            />
-                                        </ListItem>
-                                    ))}
-                            </List>
+                            <Typography variant="h6" gutterBottom>Recipe Tree</Typography>
+                            <RecipeTreeView 
+                                root={buildRecipeTree(selectedRecipe.outputItem, quantity)} 
+                            />
                         </Box>
                     </Paper>
                 </Box>

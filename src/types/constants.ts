@@ -21,5 +21,13 @@ export const STRUCTURES = {
     Oven: 'Oven',
     Smelter: 'Smelter',
     TanningTub: 'Tanning Tub',
+    Loom: 'Loom',
 } as const;
 export type Structure = (typeof STRUCTURES)[keyof typeof STRUCTURES];
+
+export const TIERS = {
+    Tier1: 1,
+    Tier2: 2,
+    Tier3: 3,
+} as const;
+export type Tier = (typeof TIERS)[keyof typeof TIERS];

@@ -106,7 +106,21 @@ export const tailoringRecipes = addProfessionRecipes(PROFESSIONS.Tailoring).add(
             { itemName: 'Refined Rough Cloth', quantity: 100 },
         ],
     },
-
+    {
+        recipeName: 'Rough Woven Set (custom)',
+        outputs: [
+            { itemName: 'Rough Woven Set (custom)', quantity: 1 },
+        ],
+        effort: 100,
+        ingredients: [
+           { itemName: 'Rough Woven Cap', quantity: 1 },
+            { itemName: 'Rough Woven Shirt', quantity: 1 },
+            { itemName: 'Rough Woven Shorts', quantity: 1 },
+            { itemName: 'Rough Woven Shoes', quantity: 1 },
+            { itemName: 'Rough Woven Gloves', quantity: 1 },
+            { itemName: 'Rough Woven Belt', quantity: 1 },
+        ],
+    }
 ]);
 
 export const loomRecipes = addStructureRecipes(STRUCTURES.Loom).add(TIERS.Tier1, [

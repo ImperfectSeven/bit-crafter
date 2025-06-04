@@ -3,6 +3,9 @@ import { farmRecipes, farmingRecipes } from './farming';
 import { foragingRecipes } from './foraging-station';
 import { kilnRecipes } from './kiln';
 import { tailoringRecipes, loomRecipes } from './tailoring';
+import { forestryRecipes } from './forestry-station';
+import { carpentyRecipes } from './carpentry';
+
 // Combine all recipes
 export const ALL_RECIPES: CraftingRecipe[] = [
     farmRecipes,
@@ -10,5 +13,7 @@ export const ALL_RECIPES: CraftingRecipe[] = [
     foragingRecipes,
     kilnRecipes,
     tailoringRecipes,
-    loomRecipes
+    loomRecipes,
+    forestryRecipes,
+    carpentyRecipes
 ].map((recipeBuilder) => recipeBuilder.getRecipes()).flat();

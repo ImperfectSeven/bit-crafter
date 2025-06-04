@@ -18,7 +18,6 @@ import {
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import { SimpleTreeView as TreeView } from '@mui/x-tree-view/SimpleTreeView';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 interface CalculatedIngredient {
     itemName: string;

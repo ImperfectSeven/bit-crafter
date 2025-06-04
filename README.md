@@ -1,11 +1,29 @@
-# React + TypeScript + Vite
+# Bitcraft Recipe Calculator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive recipe calculator for Bitcraft, built with React, TypeScript, and Material-UI.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Search and filter recipes
+- Calculate required materials and effort points
+- Support for variable output recipes
+- Track structure usage and parallel processing
+- Calculate total crafting time
+- Show intermediate and raw materials needed
+
+## Tech Stack
+
+- React with TypeScript
+- Material-UI (MUI) for components
+- Vite for build tooling
+- TailwindCSS for additional styling
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Start dev server: `npm run dev`
+4. Build for production: `npm run build`
 
 ## Expanding the ESLint configuration
 

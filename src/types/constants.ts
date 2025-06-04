@@ -11,6 +11,7 @@ export const PROFESSIONS = {
     Smithing: 'Smithing',
     Scholar: 'Scholar',
     Tailoring: 'Tailoring',
+    Cooking: 'Cooking',
 } as const;
 export type Profession = (typeof PROFESSIONS)[keyof typeof PROFESSIONS];
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { type CraftingRecipe, SAMPLE_RECIPES } from '../types/recipes';
 import { useClickOutside } from '../hooks/useClickOutside';
 import {
@@ -13,6 +13,7 @@ import {
     AccordionSummary,
     AccordionDetails,
     Chip,
+    Alert,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -65,6 +66,12 @@ export const RecipeCalculator = () => {
     const [quantity, setQuantity] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [recipeWarnings, setRecipeWarnings] = useState<string[]>([]);
+    const [calculatedResults, setCalculatedResults] = useState<{
+        totals: CraftingTotals;
+        ingredients: CalculatedIngredient[];
+        warnings: string[];
+    } | null>(null);
     
     const searchContainerRef = useClickOutside(() => setIsDropdownOpen(false));
     
@@ -81,15 +88,49 @@ export const RecipeCalculator = () => {
         return (outputQty.min + outputQty.max) / 2;
     };
 
-    const calculateTotals = (recipe: CraftingRecipe, amount: number): CraftingTotals => {
+    const calculateCraftingAttempts = (recipe: CraftingRecipe, targetQuantity: number): CraftingAttempts => {
+        if (typeof recipe.outputQuantity === 'number') {
+            const attempts = Math.ceil(targetQuantity / recipe.outputQuantity);
+            return { min: attempts, max: attempts };
+        }
+
+        const minAttempts = Math.ceil(targetQuantity / recipe.outputQuantity.max);
+        const maxAttempts = Math.ceil(targetQuantity / recipe.outputQuantity.min);
+        return { min: minAttempts, max: maxAttempts };
+    };
+
+    const formatCraftingAttempts = (attempts: CraftingAttempts): string => {
+        if (attempts.min === attempts.max) {
+            return `${attempts.min}`;
+        }
+        return `${attempts.min}-${attempts.max}`;
+    };
+
+    const calculateTotals = (
+        recipe: CraftingRecipe, 
+        amount: number, 
+        recipeChain: Set<string> = new Set()
+    ): [CraftingTotals, string[]] => {
         const result: CraftingTotals = {
             totalEffort: 0,
             totalSeconds: 0,
             items: [],
             structureUsage: []
         };
+        const warnings: string[] = [];
 
-        const processRecipe = (r: CraftingRecipe, qty: number) => {
+        const processRecipe = (r: CraftingRecipe, qty: number, chain: Set<string>) => {
+            if (chain.has(r.outputItem)) {
+                const warningMsg = `Circular recipe detected: ${r.outputItem} is part of a crafting loop`;
+                if (!warnings.includes(warningMsg)) {
+                    warnings.push(warningMsg);
+                }
+                return;
+            }
+
+            const newChain = new Set(chain);
+            newChain.add(r.outputItem);
+
             const attempts = Math.ceil(qty / getAverageOutput(r.outputQuantity));
             
             if (r.recipeType === 'active') {
@@ -102,7 +143,6 @@ export const RecipeCalculator = () => {
                     attempts
                 });
             } else {
-                // Find or create structure usage entry
                 let structureUsage = result.structureUsage.find(su => su.structure === r.structure);
                 if (!structureUsage) {
                     structureUsage = {
@@ -114,11 +154,9 @@ export const RecipeCalculator = () => {
                 }
                 structureUsage.attempts += attempts;
                 
-                // Calculate batches needed (rounded up)
                 const totalBatches = Math.ceil(attempts / PARALLEL_SLOTS_PER_STRUCTURE);
                 structureUsage.totalBatches = Math.max(structureUsage.totalBatches, totalBatches);
                 
-                // Total time is seconds per attempt * number of full batches needed
                 const totalTime = r.seconds * totalBatches;
                 result.totalSeconds = Math.max(result.totalSeconds, totalTime);
 
@@ -131,63 +169,65 @@ export const RecipeCalculator = () => {
                 });
             }
 
-            // Process ingredients recursively
             r.ingredients.forEach(ingredient => {
                 const subRecipe = SAMPLE_RECIPES.find(sr => sr.outputItem === ingredient.itemName);
                 if (subRecipe) {
-                    processRecipe(subRecipe, ingredient.quantity * attempts);
+                    processRecipe(subRecipe, ingredient.quantity * attempts, newChain);
                 }
             });
         };
 
-        processRecipe(recipe, amount);
-        return result;
+        processRecipe(recipe, amount, recipeChain);
+        return [result, warnings];
     };
 
-    const calculateCraftingAttempts = (recipe: CraftingRecipe, targetAmount: number): CraftingAttempts => {
-        if (typeof recipe.outputQuantity === 'number') {
-            const attempts = Math.ceil(targetAmount / recipe.outputQuantity);
-            return { min: attempts, max: attempts };
+    const calculateIngredientsRecursive = (
+        recipe: CraftingRecipe, 
+        amount: number, 
+        recipeChain: Set<string> = new Set()
+    ): [CalculatedIngredient[], string[]] => {
+        const warnings: string[] = [];
+
+        if (recipeChain.has(recipe.outputItem)) {
+            const warningMsg = `Circular recipe detected: ${recipe.outputItem} is part of a crafting loop`;
+            if (!warnings.includes(warningMsg)) {
+                warnings.push(warningMsg);
+            }
+            return [[{
+                itemName: recipe.outputItem,
+                quantity: amount,
+                isRawMaterial: true
+            }], warnings];
         }
-        // Calculate attempts based on average output
-        const avgAttempts = Math.ceil(targetAmount / getAverageOutput(recipe.outputQuantity));
-        // Also calculate min/max for display purposes
-        return {
-            min: Math.ceil(targetAmount / recipe.outputQuantity.max),
-            max: Math.ceil(targetAmount / recipe.outputQuantity.min),
-            average: avgAttempts
-        } as CraftingAttempts & { average: number };
-    };
 
-    const formatCraftingAttempts = (attempts: CraftingAttempts & { average?: number }): string => {
-        if ('average' in attempts && attempts.average) {
-            return `${attempts.average} (range: ${attempts.min}-${attempts.max})`;
-        }
-        return attempts.min === attempts.max ?
-            attempts.min.toString() :
-            `${attempts.min}-${attempts.max}`;
-    };
+        const newChain = new Set(recipeChain);
+        newChain.add(recipe.outputItem);
 
-    const calculateIngredientsRecursive = (recipe: CraftingRecipe, amount: number): CalculatedIngredient[] => {
         const getMultiplier = (outputQty: number | { min: number; max: number }) => {
             if (typeof outputQty === 'number') {
                 return Math.ceil(amount / outputQty);
             }
-            // Use average output instead of minimum
             return Math.ceil(amount / getAverageOutput(outputQty));
-        };        const multiplier = getMultiplier(recipe.outputQuantity);
-        const ingredients = recipe.ingredients.map(ingredient => {
+        };
+
+        const multiplier = getMultiplier(recipe.outputQuantity);
+        const ingredients = recipe.ingredients.flatMap(ingredient => {
             const subRecipe = SAMPLE_RECIPES.find(r => r.outputItem === ingredient.itemName);
             if (subRecipe) {
-                // Mark the current ingredient as an intermediate item since it can be crafted
-                const intermediateItem = [{
+                const intermediateItem = {
                     itemName: ingredient.itemName,
                     quantity: ingredient.quantity * multiplier,
                     isRawMaterial: false
-                }];
-                // Get the sub-ingredients needed to craft this intermediate item
-                const subIngredients = calculateIngredientsRecursive(subRecipe, ingredient.quantity * multiplier);
-                return [...intermediateItem, ...subIngredients];
+                };
+                
+                const [subIngredients, subWarnings] = calculateIngredientsRecursive(
+                    subRecipe,
+                    ingredient.quantity * multiplier,
+                    newChain
+                );
+                warnings.push(...subWarnings);
+
+                return [intermediateItem, ...subIngredients];
             }
             return [{
                 itemName: ingredient.itemName,
@@ -196,8 +236,7 @@ export const RecipeCalculator = () => {
             }];
         });
 
-        const flatIngredients = ingredients.flat();
-        return flatIngredients.reduce((acc, curr) => {
+        const consolidatedIngredients = ingredients.reduce((acc, curr) => {
             const existing = acc.find(item => item.itemName === curr.itemName);
             if (existing) {
                 existing.quantity += curr.quantity;
@@ -206,7 +245,30 @@ export const RecipeCalculator = () => {
             }
             return acc;
         }, [] as CalculatedIngredient[]);
+
+        return [consolidatedIngredients, warnings];
     };
+
+    // Update results when recipe or quantity changes
+    useEffect(() => {
+        if (selectedRecipe) {
+            const [totals, totalWarnings] = calculateTotals(selectedRecipe, quantity);
+            const [ingredients, ingredientWarnings] = calculateIngredientsRecursive(selectedRecipe, quantity);
+            const allWarnings = [...new Set([...totalWarnings, ...ingredientWarnings])];
+            
+            setCalculatedResults({
+                totals,
+                ingredients,
+                warnings: allWarnings
+            });
+            
+            if (allWarnings.length > 0) {
+                setRecipeWarnings(allWarnings);
+            } else {
+                setRecipeWarnings([]);
+            }
+        }
+    }, [selectedRecipe, quantity]);
 
     return (
         <Box>
@@ -263,8 +325,16 @@ export const RecipeCalculator = () => {
                 )}
             </Box>
 
-            {selectedRecipe && (
+            {selectedRecipe && calculatedResults && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {recipeWarnings.length > 0 && (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            {recipeWarnings.map((warning, index) => (
+                                <div key={index}>{warning}</div>
+                            ))}
+                        </Alert>
+                    )}
+
                     <Paper sx={{ p: 3 }}>
                         <Typography variant="h5" gutterBottom>
                             {selectedRecipe.outputItem}
@@ -305,79 +375,74 @@ export const RecipeCalculator = () => {
                             sx={{ mb: 3 }}
                         />
 
-                        {(() => {
-                            const totals = calculateTotals(selectedRecipe, quantity);
-                            return (
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                    <Typography>
-                                        Crafting attempts needed: {formatCraftingAttempts(calculateCraftingAttempts(selectedRecipe, quantity))}
-                                    </Typography>
-                                    
-                                    {totals.totalEffort > 0 && (
-                                        <Typography>
-                                            Total Effort Required: {totals.totalEffort} EP
-                                        </Typography>
-                                    )}
-                                    {totals.totalSeconds > 0 && (
-                                        <Typography>
-                                            Total Processing Time: {Math.floor(totals.totalSeconds / 60)} minutes {totals.totalSeconds % 60} seconds
-                                        </Typography>
-                                    )}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <Typography>
+                                Crafting attempts needed: {formatCraftingAttempts(calculateCraftingAttempts(selectedRecipe, quantity))}
+                            </Typography>
+                            
+                            {calculatedResults.totals.totalEffort > 0 && (
+                                <Typography>
+                                    Total Effort Required: {calculatedResults.totals.totalEffort} EP
+                                </Typography>
+                            )}
+                            {calculatedResults.totals.totalSeconds > 0 && (
+                                <Typography>
+                                    Total Processing Time: {Math.floor(calculatedResults.totals.totalSeconds / 60)} minutes {calculatedResults.totals.totalSeconds % 60} seconds
+                                </Typography>
+                            )}
 
-                                    <Accordion>
-                                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                            <Typography color="primary">View Process Breakdown</Typography>
-                                        </AccordionSummary>
-                                        <AccordionDetails>
-                                            <List>
-                                                {totals.items.map((item, index) => (
-                                                    <ListItem key={index}>
-                                                        <ListItemText
-                                                            primary={`${item.itemName} (${item.attempts} attempts)`}
-                                                            secondary={
-                                                                item.recipeType === 'active'
-                                                                    ? `${item.effort * item.attempts} EP (${item.profession})`
-                                                                    : `${Math.floor(item.seconds * item.attempts / 60)}m ${(item.seconds * item.attempts) % 60}s (${item.structure})`
-                                                            }
-                                                        />
-                                                    </ListItem>
-                                                ))}
-                                            </List>
-                                        </AccordionDetails>
-                                    </Accordion>
+                            <Accordion>
+                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                    <Typography color="primary">View Process Breakdown</Typography>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <List>
+                                        {calculatedResults.totals.items.map((item, index) => (
+                                            <ListItem key={index}>
+                                                <ListItemText
+                                                    primary={`${item.itemName} (${item.attempts} attempts)`}
+                                                    secondary={
+                                                        item.recipeType === 'active'
+                                                            ? `${item.effort * item.attempts} EP (${item.profession})`
+                                                            : `${Math.floor(item.seconds * item.attempts / 60)}m ${(item.seconds * item.attempts) % 60}s (${item.structure})`
+                                                    }
+                                                />
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                </AccordionDetails>
+                            </Accordion>
 
-                                    {totals.structureUsage.length > 0 && (
-                                        <Accordion>
-                                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                                <Typography color="primary">View Structure Usage</Typography>
-                                            </AccordionSummary>
-                                            <AccordionDetails>
-                                                <List>
-                                                    {totals.structureUsage.map((usage, index) => (
-                                                        <ListItem key={index}>
-                                                            <ListItemText
-                                                                primary={`${usage.structure}: ${usage.attempts} total attempts in ${usage.totalBatches} batches`}
-                                                                secondary={usage.attempts > PARALLEL_SLOTS_PER_STRUCTURE ? 
-                                                                    `Using all ${PARALLEL_SLOTS_PER_STRUCTURE} parallel slots` : undefined}
-                                                            />
-                                                        </ListItem>
-                                                    ))}
-                                                </List>
-                                            </AccordionDetails>
-                                        </Accordion>
-                                    )}
-                                </Box>
-                            );
-                        })()}
+                            {calculatedResults.totals.structureUsage.length > 0 && (
+                                <Accordion>
+                                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                        <Typography color="primary">Structure Usage</Typography>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <List>
+                                            {calculatedResults.totals.structureUsage.map((usage, index) => (
+                                                <ListItem key={index}>
+                                                    <ListItemText
+                                                        primary={`${usage.structure}: ${usage.attempts} total attempts in ${usage.totalBatches} batches`}
+                                                        secondary={usage.attempts > PARALLEL_SLOTS_PER_STRUCTURE ? 
+                                                            `Using all ${PARALLEL_SLOTS_PER_STRUCTURE} parallel slots` : undefined}
+                                                    />
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    </AccordionDetails>
+                                </Accordion>
+                            )}
+                        </Box>
                     </Paper>
 
                     <Paper sx={{ p: 3 }}>
                         <Box sx={{ mb: 4 }}>
                             <Typography variant="h6" gutterBottom>Raw Materials Needed</Typography>
                             <List>
-                                {calculateIngredientsRecursive(selectedRecipe, quantity)
-                                    .filter(ingredient => ingredient.isRawMaterial)
-                                    .map(ingredient => (
+                                {calculatedResults.ingredients
+                                    .filter((ingredient: CalculatedIngredient) => ingredient.isRawMaterial)
+                                    .map((ingredient: CalculatedIngredient) => (
                                         <ListItem key={ingredient.itemName}>
                                             <ListItemText 
                                                 primary={`${ingredient.itemName}: ${ingredient.quantity}`}
@@ -391,9 +456,9 @@ export const RecipeCalculator = () => {
                         <Box>
                             <Typography variant="h6" gutterBottom>Intermediate Items</Typography>
                             <List>
-                                {calculateIngredientsRecursive(selectedRecipe, quantity)
-                                    .filter(ingredient => !ingredient.isRawMaterial)
-                                    .map(ingredient => (
+                                {calculatedResults.ingredients
+                                    .filter((ingredient: CalculatedIngredient) => !ingredient.isRawMaterial)
+                                    .map((ingredient: CalculatedIngredient) => (
                                         <ListItem key={ingredient.itemName}>
                                             <ListItemText 
                                                 primary={`${ingredient.itemName}: ${ingredient.quantity}`}

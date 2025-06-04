@@ -1,7 +1,8 @@
 import { PROFESSIONS, STRUCTURES, TIERS } from "../../types/constants";
 import { addProfessionRecipes, addStructureRecipes } from "./utils";
 
-export const smelterRecipes = addStructureRecipes(STRUCTURES.Smelter).add(TIERS.Tier1, [
+export const smelterRecipes = addStructureRecipes(STRUCTURES.Smelter)
+.add(TIERS.Tier1, [
     {
         recipeName: 'Molten Farralith',
         outputs: [{ itemName: 'Molten Farralith', quantity: 1 }],

@@ -1,7 +1,8 @@
 import { PROFESSIONS, TIERS } from "../../types/constants";
 import { addProfessionRecipes } from "./utils";
 
-export const miningStationRecipes = addProfessionRecipes(PROFESSIONS.Mining).add(TIERS.Tier1, [
+export const miningStationRecipes = addProfessionRecipes(PROFESSIONS.Mining)
+.add(TIERS.Tier1, [
     {
         recipeName: 'Ferralith Orce Piece',
         effort: 50,

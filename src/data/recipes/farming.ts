@@ -2,7 +2,8 @@ import { PROFESSIONS, STRUCTURES, TIERS } from '../../types/constants';
 import { addProfessionRecipes, addStructureRecipes } from './utils';
 
 // Example of structure recipes
-export const farmRecipes = addStructureRecipes(STRUCTURES.Farm).add(TIERS.Tier2, [
+export const farmRecipes = addStructureRecipes(STRUCTURES.Farm)
+.add(TIERS.Tier1, [
     {
         recipeName: 'Grow Basic Wispweave',
         outputs: [{ itemName: 'Basic Wispweave Plant', quantity: 1 }],

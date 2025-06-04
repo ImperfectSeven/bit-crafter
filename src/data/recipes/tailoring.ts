@@ -1,7 +1,8 @@
 import { PROFESSIONS, STRUCTURES, TIERS } from "../../types/constants";
 import { addProfessionRecipes, addStructureRecipes } from "./utils";
 
-export const tailoringRecipes = addProfessionRecipes(PROFESSIONS.Tailoring).add(TIERS.Tier1, [
+export const tailoringRecipes = addProfessionRecipes(PROFESSIONS.Tailoring)
+.add(TIERS.Tier1, [
     {
         recipeName: 'Rough Cloth',
         outputs: [{ itemName: 'Rough Cloth', quantity: 1 }],
@@ -126,7 +127,8 @@ export const tailoringRecipes = addProfessionRecipes(PROFESSIONS.Tailoring).add(
     }
 ]);
 
-export const loomRecipes = addStructureRecipes(STRUCTURES.Loom).add(TIERS.Tier1, [
+export const loomRecipes = addStructureRecipes(STRUCTURES.Loom)
+.add(TIERS.Tier1, [
     {
         recipeName: 'Rough Cloth Strip',
         outputs: [{ itemName: 'Rough Cloth Strip', quantity: 1 }],

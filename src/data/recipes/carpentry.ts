@@ -1,7 +1,8 @@
 import { PROFESSIONS, TIERS } from "../../types/constants";
 import { addProfessionRecipes } from "./utils";
 
-export const carpentyRecipes = addProfessionRecipes(PROFESSIONS.Carpentry).add(TIERS.Tier1, [
+export const carpentyRecipes = addProfessionRecipes(PROFESSIONS.Carpentry)
+.add(TIERS.Tier1, [
     {
         recipeName: 'Deed: Cart',
         effort: 100,

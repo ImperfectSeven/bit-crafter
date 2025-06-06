@@ -4,11 +4,11 @@ import { addProfessionRecipes, addStructureRecipes } from "./utils";
 export const smelterRecipes = addStructureRecipes(STRUCTURES.Smelter)
 .add(TIERS.Tier1, [
     {
-        recipeName: 'Molten Farralith',
-        outputs: [{ itemName: 'Molten Farralith', quantity: 1 }],
+        recipeName: 'Molten Ferralith',
+        outputs: [{ itemName: 'Molten Ferralith', quantity: 1 }],
         seconds: 5 * 60,
         ingredients: [
-            { itemName: 'Farralith Ore Concentrate', quantity: 1 },
+            { itemName: 'Ferralith Ore Concentrate', quantity: 1 },
             { itemName: 'Rough Wood Log', quantity: 1 }
         ]
     }
@@ -19,20 +19,20 @@ export const smithingStationRecipes = addProfessionRecipes(PROFESSIONS.Smithing)
     {
         recipeName: 'Ferralith Ore Concentrate',
         effort: 50,
-        outputs: [{ itemName: 'Farralith Ore Concentrate', quantity: 1 }],
-        ingredients: [{ itemName: 'Farralith Ore Piece', quantity: 2 }]
+        outputs: [{ itemName: 'Ferralith Ore Concentrate', quantity: 1 }],
+        ingredients: [{ itemName: 'Ferralith Ore Piece', quantity: 2 }]
     },
     {
         recipeName: 'Ferralith Ingot',
         effort: 100,
-        outputs: [{ itemName: 'Farralith Ingot', quantity: 1 }],
-        ingredients: [{ itemName: 'Molten Farralith', quantity: 1 }]
+        outputs: [{ itemName: 'Ferralith Ingot', quantity: 1 }],
+        ingredients: [{ itemName: 'Molten Ferralith', quantity: 1 }]
     },
     {
         recipeName: 'Ferralith Nails',
         effort: 100,
         outputs: [{ itemName: 'Ferralith Nails', quantity: 5 }],
-        ingredients: [{ itemName: 'Farralith Ingot', quantity: 1 }]
+        ingredients: [{ itemName: 'Ferralith Ingot', quantity: 1 }]
     },
     {
         recipeName: 'Ferralith Plated Bracers',

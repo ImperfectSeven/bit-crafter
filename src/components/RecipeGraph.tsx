@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import type {
     Node,
     Edge,
@@ -53,7 +53,8 @@ const CustomNode = (nodeProps: any) => {
     const hasAlternatives = nodeProps.data.alternativeRecipes && nodeProps.data.alternativeRecipes.length > 1;
     return (
         <>
-            {/* Source handle at bottom */}            <div style={{ padding: '10px', background: '#fff', border: '1px solid #ccc', borderRadius: '5px' }}>
+            {/* Source handle at bottom */}
+            <div style={{ padding: '10px', background: '#fff', border: '1px solid #ccc', borderRadius: '5px' }}>
                 <div style={{ fontWeight: 'bold' }}>{nodeProps.data.label}</div>
                 <div>x{nodeProps.data.quantity}</div>
                 {hasAlternatives && (
@@ -174,7 +175,9 @@ const buildGraph = (
             alternativeRecipesMap.set(itemName, recipes);
         }
         return recipes;
-    };    const collectIngredients = (
+    };
+
+    const collectIngredients = (
         currentRecipe: CraftingRecipe,
         qty: number,
         visited: Set<string> = new Set()
@@ -267,14 +270,17 @@ const buildGraph = (
                     onRecipeSelect: () => {} // Will be replaced by component's onRecipeSelect
                 }
             });
-        });    // Add edges
+        });
+
+    // Add edges
     for (const [outputItem, ingredients] of recipeTree.entries()) {
         const outputNodeId = processedNodes.get(outputItem);
         if (!outputNodeId) continue;
 
         for (const [ingredientItem, quantity] of ingredients.entries()) {
             const ingredientNodeId = processedNodes.get(ingredientItem);
-            if (!ingredientNodeId) continue;            
+            if (!ingredientNodeId) continue;
+            
             edges.push({
                 id: `${ingredientNodeId}-${outputNodeId}`,
                 source: ingredientNodeId,
@@ -327,7 +333,9 @@ const layoutNodes = (nodes: RecipeNode[], edges: Edge[]): RecipeNode[] => {
 
     // Start with root nodes at level 0
     const queue: NodeWithLevel[] = rootNodes.map(node => ({ ...node, level: 0 }));
-    queue.forEach(node => nodeMap.set(node.id, node));    while (queue.length > 0) {
+    queue.forEach(node => nodeMap.set(node.id, node));
+
+    while (queue.length > 0) {
         const current = queue.shift()!;
         const dependentNodes = Array.from(dependents.get(current.id) || []);
 
@@ -352,7 +360,9 @@ const layoutNodes = (nodes: RecipeNode[], edges: Edge[]): RecipeNode[] => {
             nodesByLevel.set(node.level!, []);
         }
         nodesByLevel.get(node.level!)!.push(node);
-    });    // Position nodes
+    });
+
+    // Position nodes
     nodesByLevel.forEach((levelNodes, level) => {
         const totalWidth = levelNodes.length * NODE_WIDTH + (levelNodes.length - 1) * HORIZONTAL_SPACING;
         const startX = -totalWidth / 2;
@@ -381,11 +391,20 @@ const defaultEdgeOptions = {
 };
 
 export const RecipeGraph = ({ recipe, quantity, recipeChoices, onRecipeSelect }: RecipeGraphProps) => {
-    const [isFullscreen, setIsFullscreen] = useState(false);    const { nodes: initialNodes, edges: initialEdges } = buildGraph(recipe, quantity, recipeChoices);
-    const layoutedNodes = layoutNodes(initialNodes, initialEdges);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-    const [nodes, , onNodesChange] = useNodesState(layoutedNodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+    // Create mutable refs for the state setters so we can use them in useEffect
+    const setEdgesRef = useCallback((eds: Edge[]) => setEdges(eds), [setEdges]);
+    
+    // Update graph when recipe, quantity, or recipe choices change
+    useEffect(() => {
+        const { nodes: newNodes, edges: newEdges } = buildGraph(recipe, quantity, recipeChoices);
+        const layoutedNodes = layoutNodes(newNodes, newEdges);
+        setNodes(layoutedNodes);
+        setEdges(newEdges);
+    }, [recipe, quantity, recipeChoices, setNodes, setEdgesRef]);
 
     const handleConnect = useCallback(
         (params: Connection) => {
@@ -434,7 +453,8 @@ export const RecipeGraph = ({ recipe, quantity, recipeChoices, onRecipeSelect }:
                 fitView
             >
                 <Background />
-                <Controls />                <Panel position="top-left">
+                <Controls />
+                <Panel position="top-left">
                     <IconButton
                         onClick={toggleFullscreen}
                         sx={{ 

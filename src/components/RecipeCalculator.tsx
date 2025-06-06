@@ -17,11 +17,7 @@ import {
     Chip,
     Alert,
     Divider,
-    Tabs,
-    Tab,
 } from '@mui/material';
-import { TreeItem } from '@mui/x-tree-view/TreeItem';
-import { SimpleTreeView as TreeView } from '@mui/x-tree-view/SimpleTreeView';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { MaterialWithAlternatives as MaterialAlternatives } from './MaterialWithAlternatives';
 
@@ -70,17 +66,7 @@ interface CraftingTotals {
     structureUsage: StructureUsage[];
 }
 
-interface RecipeTreeItem {
-    id: string;
-    name: string;
-    quantity: number;
-    recipe?: CraftingRecipe;
-    children: RecipeTreeItem[];
-}
-
 const PARALLEL_SLOTS_PER_STRUCTURE = 10;
-
-
 
 const getAverageOutput = (output: RecipeOutput): number => {
     const qty = output.quantity;
@@ -224,123 +210,11 @@ const calculateTotals = (
     return [result, warnings];
 };
 
-const buildRecipeTree = (
-    itemName: string,
-    quantity: number,
-    visitedItems: Set<string> = new Set(),
-    currentChain: Set<string> = new Set()
-): RecipeTreeItem => {    const id = `${itemName}-${Math.random().toString(36).substr(2, 9)}`;
-    const recipe = getBestRecipeForItem(itemName)[0];
-    const children: RecipeTreeItem[] = [];
-
-    if (recipe && !visitedItems.has(itemName)) {
-        // Check for circular dependencies
-        if (currentChain.has(itemName)) {
-            return { id, name: itemName, quantity, children: [] };
-        }
-
-        visitedItems.add(itemName);
-        const newChain = new Set(currentChain).add(itemName);
-        const mainOutput = getMainOutput(recipe);
-
-        recipe.ingredients.forEach(ingredient => {
-            const multiplier = Math.ceil(quantity / getAverageOutput(mainOutput));
-            children.push(
-                buildRecipeTree(
-                    ingredient.itemName,
-                    ingredient.quantity * multiplier,
-                    visitedItems,
-                    newChain
-                )
-            );
-        });
-    }
-
-    return { id, name: itemName, quantity, recipe, children };
-};
-
-interface RecipeTreeViewProps {
-    root: RecipeTreeItem;
-    recipeChoices: Map<string, CraftingRecipe>;
-    onRecipeSelect: (itemName: string, recipe: CraftingRecipe) => void;
-}
-
-const RecipeTreeView: React.FC<RecipeTreeViewProps> = ({ root, recipeChoices, onRecipeSelect }) => {
-    const renderTree = (node: RecipeTreeItem) => {
-        // Get recipe alternatives for this node
-        const alternatives = node.name ? getBestRecipeForItem(node.name) : [];
-        const selectedRecipe = node.name ? recipeChoices.get(node.name) : undefined;
-
-        return (
-            <TreeItem
-                key={node.id}
-                itemId={node.id}
-                label={
-                    <Box sx={{ display: 'flex', flexDirection: 'column', py: 0.5 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography>
-                                {node.name} × {node.quantity}
-                                {node.recipe && ` (${node.recipe.recipeType === 'active' ? node.recipe.profession : node.recipe.structure})`}
-                            </Typography>
-                        </Box>
-                        {alternatives.length > 1 && node.name && (
-                            <Box sx={{ mt: 1, pl: 2 }}>
-                                {alternatives.map((alt: CraftingRecipe, idx: number) => (
-                                    <Typography
-                                        key={idx}
-                                        variant="caption"
-                                        color={selectedRecipe?.recipeName === alt.recipeName ? "primary" : "text.secondary"}
-                                        sx={{ 
-                                            display: 'block', 
-                                            cursor: 'pointer',
-                                            pl: 1,
-                                            borderLeft: (theme) => 
-                                                selectedRecipe?.recipeName === alt.recipeName 
-                                                    ? `2px solid ${theme.palette.primary.main}`
-                                                    : '2px solid transparent',
-                                            '&:hover': { 
-                                                color: 'primary.main',
-                                                backgroundColor: 'action.hover'
-                                            }
-                                        }}
-                                        onClick={() => {
-                                            if (node.name) {
-                                                onRecipeSelect(node.name, alt);
-                                            }
-                                        }}
-                                    >
-                                        {alt.recipeType === 'active' ? alt.profession : alt.structure} •{' '}
-                                        {alt.ingredients.map(i => `${i.quantity} ${i.itemName}`).join(', ')}
-                                    </Typography>
-                                ))}
-                            </Box>
-                        )}
-                    </Box>
-                }
-            >
-                {node.children.map((child) => renderTree(child))}
-            </TreeItem>
-        );
-    };
-
-    return (
-        <TreeView
-            aria-label="recipe tree"
-            sx={{ flexGrow: 1 }}
-        >
-            {renderTree(root)}
-        </TreeView>
-    );
-};
-
-
-
 interface CalculatedResults {
     totals: CraftingTotals;
     ingredients: CalculatedIngredient[];
     warnings: string[];
 }
-
 export const RecipeCalculator: React.FC = () => {
     const [selectedRecipe, setSelectedRecipe] = useState<CraftingRecipe | null>(null);
     const [recipeChoices, setRecipeChoices] = useState<Map<string, CraftingRecipe>>(new Map());
@@ -348,7 +222,6 @@ export const RecipeCalculator: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [recipeWarnings, setRecipeWarnings] = useState<string[]>([]);
-    const [viewMode, setViewMode] = useState<'tree' | 'graph'>('tree');
     const [calculatedResults, setCalculatedResults] = useState<CalculatedResults | null>(null);
 
     const searchContainerRef = useClickOutside(() => setIsDropdownOpen(false));
@@ -480,7 +353,8 @@ export const RecipeCalculator: React.FC = () => {
                     }}
                     onFocus={() => setIsDropdownOpen(true)}
                     placeholder="Type to search recipes..."
-                />                {isDropdownOpen && filteredRecipes.size > 0 && (
+                />
+                {isDropdownOpen && filteredRecipes.size > 0 && (
                     <Paper
                         sx={{
                             position: 'absolute',
@@ -495,61 +369,67 @@ export const RecipeCalculator: React.FC = () => {
                         <List>
                             {Array.from(filteredRecipes.entries()).map(([itemName, recipes]) => (
                                 <Box key={itemName}>
-                                    <ListItem sx={{ flexDirection: 'column', alignItems: 'stretch' }}>                                        <ListItemText
-                                        primary={itemName}
-                                        sx={{
-                                            fontWeight: 'bold',
-                                            '.MuiTypography-root': {
-                                                color: 'primary.main'
-                                            }
-                                        }}
-                                    />
-                                        <List>                                            {recipes.map((recipe: CraftingRecipe) => (<ListItem
-                                                key={recipe.recipeName}
-                                                component={'button'}
-                                                onClick={() => {
-                                                    setSelectedRecipe(recipe);
-                                                    setSearchTerm(itemName);
-                                                    setIsDropdownOpen(false);
-                                                }} sx={{
-                                                    pl: 2,
-                                                    display: 'block',
-                                                    textAlign: 'left',
-                                                    width: '100%',
-                                                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                                                    '&:hover': {
-                                                        backgroundColor: 'rgba(25, 118, 210, 0.08)'
-                                                    }
-                                                }}
-                                            >
-                                                <ListItemText
-                                                    primary={<Box>
-                                                        <Typography
-                                                            variant="body2"
-                                                            sx={{
-                                                                color: 'primary.main',
-                                                                fontWeight: 500
-                                                            }}
-                                                        >
-                                                            {recipe.recipeType === 'active'
-                                                                ? `via ${recipe.profession}`
-                                                                : `using ${recipe.structure}`
-                                                            }
-                                                        </Typography>
-                                                        <Typography
-                                                            variant="caption"
-                                                            sx={{
-                                                                color: 'text.primary',
-                                                                display: 'block',
-                                                                mt: 0.5
-                                                            }}
-                                                        >                                                            Using: {recipe.ingredients.map((i: CraftingIngredient) =>
-                                                                `${i.quantity} ${i.itemName}`).join(', ')}
-                                                        </Typography>
-                                                    </Box>
-                                                    }
-                                                />
-                                            </ListItem>
+                                    <ListItem sx={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                                        <ListItemText
+                                            primary={itemName}
+                                            sx={{
+                                                fontWeight: 'bold',
+                                                '.MuiTypography-root': {
+                                                    color: 'primary.main'
+                                                }
+                                            }}
+                                        />
+                                        <List>
+                                            {recipes.map((recipe: CraftingRecipe) => (
+                                                <ListItem
+                                                    key={recipe.recipeName}
+                                                    component={'button'}
+                                                    onClick={() => {
+                                                        setSelectedRecipe(recipe);
+                                                        setSearchTerm(itemName);
+                                                        setIsDropdownOpen(false);
+                                                    }}
+                                                    sx={{
+                                                        pl: 2,
+                                                        display: 'block',
+                                                        textAlign: 'left',
+                                                        width: '100%',
+                                                        backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                                                        '&:hover': {
+                                                            backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                                                        }
+                                                    }}
+                                                >
+                                                    <ListItemText
+                                                        primary={
+                                                            <Box>
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    sx={{
+                                                                        color: 'primary.main',
+                                                                        fontWeight: 500
+                                                                    }}
+                                                                >
+                                                                    {recipe.recipeType === 'active'
+                                                                        ? `via ${recipe.profession}`
+                                                                        : `using ${recipe.structure}`
+                                                                    }
+                                                                </Typography>
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    sx={{
+                                                                        color: 'text.primary',
+                                                                        display: 'block',
+                                                                        mt: 0.5
+                                                                    }}
+                                                                >
+                                                                    Using: {recipe.ingredients.map((i: CraftingIngredient) =>
+                                                                        `${i.quantity} ${i.itemName}`).join(', ')}
+                                                                </Typography>
+                                                            </Box>
+                                                        }
+                                                    />
+                                                </ListItem>
                                             ))}
                                         </List>
                                     </ListItem>
@@ -681,48 +561,38 @@ export const RecipeCalculator: React.FC = () => {
                                 </Accordion>
                             )}
                         </Box>
-                    </Paper>                    <Paper sx={{ p: 3 }}>                        <Box sx={{ mb: 4 }}>
-                        <Typography variant="h6" gutterBottom>Raw Materials Needed</Typography>
-                        <List>
-                            {calculatedResults.ingredients
-                                .filter((ingredient: CalculatedIngredient) => ingredient.isRawMaterial)
-                                .map((ingredient: CalculatedIngredient) => (
-                                    <MaterialAlternatives
-                                        key={ingredient.itemName}
-                                        itemName={ingredient.itemName}
-                                        quantity={ingredient.quantity}
-                                        alternativeRecipes={ingredient.alternativeRecipes}
-                                        onSelectAlternative={(recipe) => {
-                                            handleRecipeChoice(ingredient.itemName, recipe);
-                                        }}
-                                    />
-                                ))}
-                        </List>
-                    </Box>
+                    </Paper>
+
+                    <Paper sx={{ p: 3 }}>
+                        <Box sx={{ mb: 4 }}>
+                            <Typography variant="h6" gutterBottom>Raw Materials Needed</Typography>
+                            <List>
+                                {calculatedResults.ingredients
+                                    .filter((ingredient: CalculatedIngredient) => ingredient.isRawMaterial)
+                                    .map((ingredient: CalculatedIngredient) => (
+                                        <MaterialAlternatives
+                                            key={ingredient.itemName}
+                                            itemName={ingredient.itemName}
+                                            quantity={ingredient.quantity}
+                                            alternativeRecipes={ingredient.alternativeRecipes}
+                                            onSelectAlternative={(recipe) => {
+                                                handleRecipeChoice(ingredient.itemName, recipe);
+                                            }}
+                                        />
+                                    ))}
+                            </List>
+                        </Box>
 
                         <Box>
                             <Typography variant="h6" gutterBottom>Recipe Visualization</Typography>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-                                <Tabs value={viewMode} onChange={(_, newValue) => setViewMode(newValue)}>
-                                    <Tab label="Tree View" value="tree" />
-                                    <Tab label="Graph View" value="graph" />
-                                </Tabs>
-                            </Box>                            {viewMode === 'tree' ? (
-                                <RecipeTreeView
-                                    root={buildRecipeTree(getMainOutput(selectedRecipe).itemName, quantity)}
+                            <Box sx={{ height: 500, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                                <RecipeGraph
+                                    recipe={selectedRecipe}
+                                    quantity={quantity}
                                     recipeChoices={recipeChoices}
                                     onRecipeSelect={handleRecipeChoice}
                                 />
-                            ) : (
-                                <Box sx={{ height: 500, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-                                    <RecipeGraph
-                                        recipe={selectedRecipe}
-                                        quantity={quantity}
-                                        recipeChoices={recipeChoices}
-                                        onRecipeSelect={handleRecipeChoice}
-                                    />
-                                </Box>
-                            )}
+                            </Box>
                         </Box>
                     </Paper>
                 </Box>

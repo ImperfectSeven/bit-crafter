@@ -6,7 +6,6 @@ import {
     Box,
     List,
     ListItem,
-    ListItemText,
     Button,
     Collapse,
 } from '@mui/material';

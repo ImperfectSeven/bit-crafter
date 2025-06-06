@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { CraftingRecipe, RecipeOutput, CraftingIngredient } from '../types/recipes';
 import { ALL_RECIPES } from '../data/recipes';
 import { useClickOutside } from '../hooks/useClickOutside';
+import { RecipeGraph } from './RecipeGraph';
 import {
     Typography,
     TextField,
@@ -16,6 +17,8 @@ import {
     Chip,
     Alert,
     Divider,
+    Tabs,
+    Tab,
 } from '@mui/material';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import { SimpleTreeView as TreeView } from '@mui/x-tree-view/SimpleTreeView';
@@ -157,7 +160,6 @@ const calculateTotals = (
         structureUsage: []
     };
     const warnings: string[] = [];
-    const mainOutput = getMainOutput(recipe);
 
     const processRecipe = (r: CraftingRecipe, qty: number, chain: Set<string>) => {
         const rMainOutput = getMainOutput(r);
@@ -222,110 +224,6 @@ const calculateTotals = (
     return [result, warnings];
 };
 
-const calculateIngredientsRecursive = (
-    recipe: CraftingRecipe,
-    amount: number,
-    recipeChain: Set<string> = new Set()
-): [CalculatedIngredient[], string[]] => {
-    const warnings: string[] = [];
-    const mainOutput = getMainOutput(recipe);
-
-    if (recipeChain.has(mainOutput.itemName)) {
-        const warningMsg = `Circular recipe detected: ${mainOutput.itemName} is part of a crafting loop`;
-        warnings.push(warningMsg);
-        return [[{
-            itemName: mainOutput.itemName,
-            quantity: amount,
-            isRawMaterial: true
-        }], warnings];
-    }
-
-    const newChain = new Set(recipeChain).add(mainOutput.itemName);
-    const multiplier = Math.ceil(amount / getAverageOutput(mainOutput));
-    
-    const ingredients = recipe.ingredients.flatMap(ingredient => {
-        const recipeOptions = getBestRecipeForItem(ingredient.itemName);
-        if (recipeOptions.length === 0) {
-            return [{
-                itemName: ingredient.itemName,
-                quantity: ingredient.quantity * multiplier,
-                isRawMaterial: true,
-                alternativeRecipes: []
-            }];
-        }
-
-        // Add this ingredient as raw material with alternatives
-        return [{
-            itemName: ingredient.itemName,
-            quantity: ingredient.quantity * multiplier,
-            isRawMaterial: true,
-            alternativeRecipes: recipeOptions
-        }];
-    });
-
-    const consolidatedIngredients = ingredients.reduce((acc, curr) => {
-        const existing = acc.find(item => item.itemName === curr.itemName);
-        if (existing) {
-            existing.quantity += curr.quantity;
-            // Merge alternative recipes, removing duplicates
-            if (curr.alternativeRecipes) {
-                existing.alternativeRecipes = existing.alternativeRecipes || [];
-                curr.alternativeRecipes.forEach(recipe => {
-                    if (!existing.alternativeRecipes!.some(r => r.recipeName === recipe.recipeName)) {
-                        existing.alternativeRecipes!.push(recipe);
-                    }
-                });
-                // Sort alternatives by efficiency
-                existing.alternativeRecipes.sort((a, b) => {
-                    const effA = getAverageOutput(getMainOutput(a)) / (a.recipeType === 'active' ? a.effort : a.seconds);
-                    const effB = getAverageOutput(getMainOutput(b)) / (b.recipeType === 'active' ? b.effort : b.seconds);
-                    return effB - effA;
-                });
-            }
-        } else {
-            acc.push({ ...curr });
-        }
-        return acc;
-    }, [] as CalculatedIngredient[]);
-
-    return [consolidatedIngredients, warnings];
-};
-
-const consolidateIngredients = (ingredients: CalculatedIngredient[]): CalculatedIngredient[] => {
-    return ingredients.reduce((acc: CalculatedIngredient[], curr: CalculatedIngredient) => {
-        const existing = acc.find(item => item.itemName === curr.itemName);
-        if (existing) {
-            existing.quantity += curr.quantity;
-            // Merge alternative recipes, removing duplicates
-            if (curr.alternativeRecipes) {
-                existing.alternativeRecipes = existing.alternativeRecipes || [];
-                curr.alternativeRecipes.forEach((recipe: CraftingRecipe) => {
-                    if (!existing.alternativeRecipes!.some((r: CraftingRecipe) => r.recipeName === recipe.recipeName)) {
-                        existing.alternativeRecipes!.push(recipe);
-                    }
-                });
-                // Sort alternatives by efficiency
-                existing.alternativeRecipes.sort((a: CraftingRecipe, b: CraftingRecipe) => {
-                    const effA = getAverageOutput(getMainOutput(a)) / (a.recipeType === 'active' ? a.effort : a.seconds);
-                    const effB = getAverageOutput(getMainOutput(b)) / (b.recipeType === 'active' ? b.effort : b.seconds);
-                    return effB - effA;
-                });
-            }
-        } else {
-            // For new ingredients, sort alternatives if they exist
-            if (curr.alternativeRecipes) {
-                curr.alternativeRecipes.sort((a: CraftingRecipe, b: CraftingRecipe) => {
-                    const effA = getAverageOutput(getMainOutput(a)) / (a.recipeType === 'active' ? a.effort : a.seconds);
-                    const effB = getAverageOutput(getMainOutput(b)) / (b.recipeType === 'active' ? b.effort : b.seconds);
-                    return effB - effA;
-                });
-            }
-            acc.push({ ...curr });
-        }
-        return acc;
-    }, []);
-};
-
 const buildRecipeTree = (
     itemName: string,
     quantity: number,
@@ -381,20 +279,8 @@ const RecipeTreeView: React.FC<RecipeTreeViewProps> = ({ root, recipeChoices, on
                     <Box sx={{ display: 'flex', flexDirection: 'column', py: 0.5 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Typography>
-                                {node.name} ({node.quantity})
-                                {node.recipe ? (
-                                    <Typography component="span" color="text.secondary" sx={{ ml: 1 }}>
-                                        via {node.recipe.recipeType === 'active' ? node.recipe.profession : node.recipe.structure}
-                                    </Typography>
-                                ) : node.children.length === 0 && alternatives.length > 0 ? (
-                                    <Typography component="span" color="info.main" sx={{ ml: 1 }}>
-                                        ({alternatives.length} recipe{alternatives.length > 1 ? 's' : ''} available)
-                                    </Typography>
-                                ) : node.children.length === 0 && (
-                                    <Typography component="span" color="success.main" sx={{ ml: 1 }}>
-                                        (raw material)
-                                    </Typography>
-                                )}
+                                {node.name} × {node.quantity}
+                                {node.recipe && ` (${node.recipe.recipeType === 'active' ? node.recipe.profession : node.recipe.structure})`}
                             </Typography>
                         </Box>
                         {alternatives.length > 1 && node.name && (
@@ -449,7 +335,11 @@ const RecipeTreeView: React.FC<RecipeTreeViewProps> = ({ root, recipeChoices, on
 
 
 
-// No longer needed - using Map<string, CraftingRecipe> instead
+interface CalculatedResults {
+    totals: CraftingTotals;
+    ingredients: CalculatedIngredient[];
+    warnings: string[];
+}
 
 export const RecipeCalculator: React.FC = () => {
     const [selectedRecipe, setSelectedRecipe] = useState<CraftingRecipe | null>(null);
@@ -458,11 +348,8 @@ export const RecipeCalculator: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [recipeWarnings, setRecipeWarnings] = useState<string[]>([]);
-    const [calculatedResults, setCalculatedResults] = useState<{
-        totals: CraftingTotals;
-        ingredients: CalculatedIngredient[];
-        warnings: string[];
-    } | null>(null);
+    const [viewMode, setViewMode] = useState<'tree' | 'graph'>('tree');
+    const [calculatedResults, setCalculatedResults] = useState<CalculatedResults | null>(null);
 
     const searchContainerRef = useClickOutside(() => setIsDropdownOpen(false));
 
@@ -814,12 +701,28 @@ export const RecipeCalculator: React.FC = () => {
                     </Box>
 
                         <Box>
-                            <Typography variant="h6" gutterBottom>Recipe Tree</Typography>
-                            <RecipeTreeView
-                                root={buildRecipeTree(getMainOutput(selectedRecipe).itemName, quantity)}
-                                recipeChoices={recipeChoices}
-                                onRecipeSelect={handleRecipeChoice}
-                            />
+                            <Typography variant="h6" gutterBottom>Recipe Visualization</Typography>
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                                <Tabs value={viewMode} onChange={(_, newValue) => setViewMode(newValue)}>
+                                    <Tab label="Tree View" value="tree" />
+                                    <Tab label="Graph View" value="graph" />
+                                </Tabs>
+                            </Box>                            {viewMode === 'tree' ? (
+                                <RecipeTreeView
+                                    root={buildRecipeTree(getMainOutput(selectedRecipe).itemName, quantity)}
+                                    recipeChoices={recipeChoices}
+                                    onRecipeSelect={handleRecipeChoice}
+                                />
+                            ) : (
+                                <Box sx={{ height: 500, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                                    <RecipeGraph
+                                        recipe={selectedRecipe}
+                                        quantity={quantity}
+                                        recipeChoices={recipeChoices}
+                                        onRecipeSelect={handleRecipeChoice}
+                                    />
+                                </Box>
+                            )}
                         </Box>
                     </Paper>
                 </Box>

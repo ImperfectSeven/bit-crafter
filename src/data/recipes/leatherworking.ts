@@ -139,4 +139,15 @@ export const leatherworkingStationRecipes = addProfessionRecipes(PROFESSIONS.Lea
             { itemName: 'Rough Leather Shirt', quantity: 1 }
         ]
     }
+])
+.add(TIERS.Tier2, [
+    {
+        recipeName: 'Simple Tannin',
+        outputs: [{ itemName: 'Simple Tannin', quantity: 3 }],
+        effort: 130,
+        ingredients: [
+            { itemName: 'Simple Tree Bark', quantity: 1 },
+            { itemName: 'Water Bucket', quantity: 2 }
+        ]
+    }
 ]);

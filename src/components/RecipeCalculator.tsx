@@ -224,16 +224,17 @@ export const RecipeCalculator: React.FC = () => {
     const [recipeWarnings, setRecipeWarnings] = useState<string[]>([]);
     const [calculatedResults, setCalculatedResults] = useState<CalculatedResults | null>(null);
 
-    const searchContainerRef = useClickOutside(() => setIsDropdownOpen(false));
-
-    // Group recipes by their main output item
+    const searchContainerRef = useClickOutside(() => setIsDropdownOpen(false));    // Group recipes by all their outputs
     const groupedRecipes = ALL_RECIPES.reduce((acc, recipe) => {
-        const mainOutput = getMainOutput(recipe);
-        const key = mainOutput.itemName;
-        if (!acc.has(key)) {
-            acc.set(key, []);
-        }
-        acc.get(key)!.push(recipe);
+        recipe.outputs.forEach(output => {
+            const key = output.itemName;
+            if (!acc.has(key)) {
+                acc.set(key, []);
+            }
+            if (!acc.get(key)!.some(r => r.recipeName === recipe.recipeName)) {
+                acc.get(key)!.push(recipe);
+            }
+        });
         return acc;
     }, new Map<string, CraftingRecipe[]>());
 
@@ -381,11 +382,32 @@ export const RecipeCalculator: React.FC = () => {
                                         />
                                         <List>
                                             {recipes.map((recipe: CraftingRecipe) => (
-                                                <ListItem
-                                                    key={recipe.recipeName}
+                                                <ListItem                                                    key={recipe.recipeName}
                                                     component={'button'}
                                                     onClick={() => {
-                                                        setSelectedRecipe(recipe);
+                                                        // Find the right output in this recipe for the selected item
+                                                        const output = recipe.outputs.find(o => o.itemName === itemName);
+                                                        if (!output) return;
+                                                        
+                                                        // If this is not the main output, we need to adjust the recipe
+                                                        const mainOutput = getMainOutput(recipe);
+                                                        if (mainOutput.itemName !== itemName) {
+                                                            // Create a calculated recipe that produces this output
+                                                            const avgQty = getAverageOutput(output);
+                                                            const mainAvgQty = getAverageOutput(mainOutput);
+                                                            const ratio = avgQty / mainAvgQty;
+                                                            const adjustedRecipe: CraftingRecipe = {
+                                                                ...recipe,
+                                                                recipeName: `${recipe.recipeName} (for ${itemName})`,
+                                                                ingredients: recipe.ingredients.map(ing => ({
+                                                                    ...ing,
+                                                                    quantity: ing.quantity * ratio
+                                                                }))
+                                                            };
+                                                            setSelectedRecipe(adjustedRecipe);
+                                                        } else {
+                                                            setSelectedRecipe(recipe);
+                                                        }
                                                         setSearchTerm(itemName);
                                                         setIsDropdownOpen(false);
                                                     }}
@@ -581,11 +603,9 @@ export const RecipeCalculator: React.FC = () => {
                                         />
                                     ))}
                             </List>
-                        </Box>
-
-                        <Box>
+                        </Box>                        <Box>
                             <Typography variant="h6" gutterBottom>Recipe Visualization</Typography>
-                            <Box sx={{ height: 500, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 1, minHeight: 400 }}>
                                 <RecipeGraph
                                     recipe={selectedRecipe}
                                     quantity={quantity}

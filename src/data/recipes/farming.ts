@@ -15,7 +15,7 @@ export const farmRecipes = addStructureRecipes(STRUCTURES.Farm)
         ]
     },
     {
-        recipeName: 'Basic Embergrain Plant',
+        recipeName: 'Basic Embergrain Plant Starter',
         outputs: [{ itemName: 'Basic Embergrain Plant', quantity: 1 }],
         seconds: 5 * 60,
         hasVariableOutput: false,
@@ -35,7 +35,7 @@ export const farmRecipes = addStructureRecipes(STRUCTURES.Farm)
         ]
     },
     {
-        recipeName: 'Basic Starbulb Plant',
+        recipeName: 'Basic Starbulb Plant Starter',
         outputs: [{ itemName: 'Basic Starbulb Plant', quantity: 1 }],
         seconds: 5 * 60,
         hasVariableOutput: false,
@@ -55,7 +55,7 @@ export const farmRecipes = addStructureRecipes(STRUCTURES.Farm)
         ]
     },
     {
-        recipeName: 'Basic Wispweave Plant',
+        recipeName: 'Basic Wispweave Plant Starter',
         outputs: [{ itemName: 'Basic Wispweave Plant', quantity: 1 }],
         seconds: 5 * 60,
         hasVariableOutput: false,
@@ -79,7 +79,7 @@ export const farmRecipes = addStructureRecipes(STRUCTURES.Farm)
         ]
     },
     {
-        recipeName: 'Simple Embergrain Plant',
+        recipeName: 'Simple Embergrain Plant Starter',
         outputs: [{ itemName: 'Simple Embergrain Plant', quantity: 1 }],
         seconds: 5 * 60,
         hasVariableOutput: false,
@@ -100,7 +100,7 @@ export const farmRecipes = addStructureRecipes(STRUCTURES.Farm)
         ]
     },
     {
-        recipeName: 'Simple Starbulb Plant',
+        recipeName: 'Simple Starbulb Plant Starter',
         outputs: [{ itemName: 'Simple Starbulb Plant', quantity: 1 }],
         seconds: 5 * 60,
         hasVariableOutput: false,
@@ -121,7 +121,7 @@ export const farmRecipes = addStructureRecipes(STRUCTURES.Farm)
         ]
     },
     {
-        recipeName: 'Simple Wispweave Plant',
+        recipeName: 'Simple Wispweave Plant Starter',
         outputs: [{ itemName: 'Simple Wispweave Plant', quantity: 1 }],
         seconds: 5 * 60,
         hasVariableOutput: false,
@@ -295,7 +295,7 @@ export const farmingRecipes = addProfessionRecipes(PROFESSIONS.Farming)
         recipeName: 'Simple Wispweave Products',
         outputs: [
             { itemName: 'Simple Wispweave Seeds', quantity: { min: 1, max: 3 } },
-            { itemName: 'Rough Wispweave Filament', quantity: { min: 2, max: 5 } },
+            { itemName: 'Simple Wispweave Filament', quantity: { min: 2, max: 5 } },
         ],
         effort: 130,
         ingredients: [

@@ -12,6 +12,17 @@ export const smelterRecipes = addStructureRecipes(STRUCTURES.Smelter)
             { itemName: 'Rough Wood Log', quantity: 1 }
         ]
     }
+])
+.add(TIERS.Tier2, [
+    {
+        recipeName: 'Molten Pyrelite',
+        outputs: [{ itemName: 'Molten Pyrelite', quantity: 1 }],
+        seconds: 15 * 60,
+        ingredients: [
+            { itemName: 'Pyrelite Ore Concentrate', quantity: 1 },
+            { itemName: 'Simple Wood Log', quantity: 1 }
+        ]
+    }
 ]);
 
 export const smithingStationRecipes = addProfessionRecipes(PROFESSIONS.Smithing)
@@ -281,9 +292,9 @@ export const smithingStationRecipes = addProfessionRecipes(PROFESSIONS.Smithing)
 // Add custom recipes
 .add(TIERS.Tier1, [
     {
-        recipeName: 'Ferraltih Armor Set (custom)',
+        recipeName: 'Ferralith Armor Set (custom)',
         effort: 0,
-        outputs: [{ itemName: 'Ferraltih Armor Set (custom)', quantity: 1 }],
+        outputs: [{ itemName: 'Ferralith Armor Set (custom)', quantity: 1 }],
         ingredients: [
             { itemName: 'Ferralith Plated Bracers', quantity: 1 },
             { itemName: 'Ferralith Plated Boots', quantity: 1 },
@@ -312,5 +323,21 @@ export const smithingStationRecipes = addProfessionRecipes(PROFESSIONS.Smithing)
             { itemName: 'Ferralith Scissors', quantity: 1 },
 
         ]
+    }
+])
+.add(TIERS.Tier2, [
+    {
+        recipeName: 'Pyrelite Ore Concentrate',
+        effort: 65,
+        outputs: [{ itemName: 'Pyrelite Ore Concentrate', quantity: 1 }],
+        ingredients: [
+            { itemName: 'Pyrelite Ore Piece', quantity: 2 }
+        ]
+    },
+    {
+        recipeName: 'Pyrelite Ingot',
+        effort: 130,
+        outputs: [{ itemName: 'Pyrelite Ingot', quantity: 1 }],
+        ingredients: [{ itemName: 'Molten Pyrelite', quantity: 1 }]
     }
 ]);

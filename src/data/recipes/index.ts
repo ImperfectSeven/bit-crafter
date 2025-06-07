@@ -3,7 +3,7 @@ import { farmRecipes, farmingRecipes } from './farming';
 import { foragingRecipes } from './foraging';
 import { kilnRecipes, masonryStationRecipes } from './masonry';
 import { tailoringRecipes, loomRecipes } from './tailoring';
-import { forestryRecipes } from './forestry';
+import { forestryStationRecipes } from './forestry';
 import { carpentyRecipes } from './carpentry';
 import { smelterRecipes, smithingStationRecipes } from './blacksmithing';
 import { miningStationRecipes } from './mining';
@@ -22,7 +22,7 @@ export const ALL_RECIPES: CraftingRecipe[] = [
     masonryStationRecipes,
     tailoringRecipes,
     loomRecipes,
-    forestryRecipes,
+    forestryStationRecipes,
     carpentyRecipes,
     smelterRecipes,
     smithingStationRecipes,

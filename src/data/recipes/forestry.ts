@@ -1,7 +1,7 @@
 import { PROFESSIONS, TIERS } from '../../types/constants';
 import { addProfessionRecipes } from './utils';
 
-export const forestryRecipes = addProfessionRecipes(PROFESSIONS.Forestry)
+export const forestryStationRecipes = addProfessionRecipes(PROFESSIONS.Forestry)
 .add(TIERS.Tier1, [
     {
         recipeName: 'Potted Oak Sapling',
@@ -48,4 +48,28 @@ export const forestryRecipes = addProfessionRecipes(PROFESSIONS.Forestry)
             { itemName: 'Rough Wood Log', quantity: 100 }
         ]
     },
+])
+.add(TIERS.Tier2, [
+    {
+        recipeName: 'Simple Tree Bark Output',
+        effort: 130,
+        outputs: [
+            { itemName: 'Simple Tree Bark', quantity: 4 },
+            { itemName: 'Simple Amber Resin', quantity: { min: 0, max: 1 } }
+        ],
+        ingredients: [
+            { itemName: 'Simple Wood Trunk', quantity: 1 }
+        ]
+    },
+    {
+        recipeName: 'Simple Wood Log Output',
+        effort: 65,
+        outputs: [
+            { itemName: 'Simple Wood Log', quantity: 6 },
+            { itemName: 'Simple Amber Resin', quantity: { min: 0, max: 1 } }
+        ],
+        ingredients: [
+            { itemName: 'Simple Wood Log', quantity: 1 }
+        ]
+    }
 ]);

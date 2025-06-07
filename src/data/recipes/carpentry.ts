@@ -78,4 +78,14 @@ export const carpentyRecipes = addProfessionRecipes(PROFESSIONS.Carpentry)
             { itemName: 'Refined Rough Plank', quantity: 100 },
         ]
     }
+])
+.add(TIERS.Tier2, [
+    {
+        recipeName: 'Simple Stripped Wood',
+        effort: 65,
+        outputs: [{ itemName: 'Simple Stripped Wood', quantity: 1 }],
+        ingredients: [
+            { itemName: 'Simple Wood Log', quantity: 3 },
+        ]
+    }
 ]);

@@ -24,7 +24,35 @@ import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import type { CraftingRecipe, RecipeOutput } from '../types/recipes';
 import { ALL_RECIPES } from '../data/recipes';
+import { PROFESSIONS, STRUCTURES, type Profession, type Structure } from '../types/constants';
 import 'reactflow/dist/style.css';
+
+// Define colors for each profession
+const PROFESSION_COLORS: Record<Profession, string> = {
+    [PROFESSIONS.Carpentry]: '#8B4513', // Brown
+    [PROFESSIONS.Masonry]: '#808080', // Gray
+    [PROFESSIONS.Farming]: '#228B22', // Forest Green
+    [PROFESSIONS.Fishing]: '#4682B4', // Steel Blue
+    [PROFESSIONS.Hunting]: '#8B0000', // Dark Red
+    [PROFESSIONS.Mining]: '#696969', // Dim Gray
+    [PROFESSIONS.Foraging]: '#556B2F', // Dark Olive Green
+    [PROFESSIONS.Forestry]: '#006400', // Dark Green
+    [PROFESSIONS.Leatherworking]: '#CD853F', // Peru
+    [PROFESSIONS.Smithing]: '#B8860B', // Dark Goldenrod
+    [PROFESSIONS.Scholar]: '#4B0082', // Indigo
+    [PROFESSIONS.Tailoring]: '#483D8B', // Dark Slate Blue
+    [PROFESSIONS.Cooking]: '#D2691E', // Chocolate
+};
+
+// Define colors for each structure
+const STRUCTURE_COLORS: Record<Structure, string> = {
+    [STRUCTURES.Farm]: PROFESSION_COLORS.Farming,
+    [STRUCTURES.Kiln]: PROFESSION_COLORS.Masonry,
+    [STRUCTURES.Oven]: PROFESSION_COLORS.Cooking,
+    [STRUCTURES.Smelter]: PROFESSION_COLORS.Smithing,
+    [STRUCTURES.TanningTub]: PROFESSION_COLORS.Leatherworking,
+    [STRUCTURES.Loom]: PROFESSION_COLORS.Tailoring,
+};
 
 interface RecipeGraphProps {
     recipe: CraftingRecipe;
@@ -55,6 +83,43 @@ const CustomNode = (nodeProps: { data: RecipeNode['data'] }) => {
     const hasAlternatives = alternativeRecipes.length > 1; // Only show if there are multiple choices
     const currentRecipe = nodeProps.data.recipe;
 
+    // Get color based on recipe type (profession or structure)
+    const getNodeColor = (recipe: CraftingRecipe | undefined) => {
+        if (!recipe) {
+            return {
+                backgroundColor: '#fff',
+                borderColor: '#ccc',
+                labelColor: '#333'
+            };
+        }
+
+        if (recipe.recipeType === 'active' && recipe.profession) {
+            return {
+                backgroundColor: `${PROFESSION_COLORS[recipe.profession]}20`,
+                borderColor: PROFESSION_COLORS[recipe.profession],
+                labelColor: PROFESSION_COLORS[recipe.profession],
+                label: recipe.profession
+            };
+        }
+
+        if (recipe.recipeType === 'passive' && recipe.structure) {
+            return {
+                backgroundColor: `${STRUCTURE_COLORS[recipe.structure]}20`,
+                borderColor: STRUCTURE_COLORS[recipe.structure],
+                labelColor: STRUCTURE_COLORS[recipe.structure],
+                label: recipe.structure
+            };
+        }
+
+        return {
+            backgroundColor: '#fff',
+            borderColor: '#ccc',
+            labelColor: '#333'
+        };
+    };
+
+    const nodeStyle = getNodeColor(currentRecipe);
+
     const handleRecipeSelect = (event: SelectChangeEvent<string>) => {
         console.log('Selection changed:', event.target.value);
         const selectedRecipe = alternativeRecipes.find(r => r.recipeName === event.target.value);
@@ -65,20 +130,30 @@ const CustomNode = (nodeProps: { data: RecipeNode['data'] }) => {
         }
     };
     return (
-        <div style={{ position: 'relative' }}>            <div style={{
+        <div style={{ position: 'relative' }}>            
+        <div style={{
                 padding: '8px',
-                background: '#fff',
-                border: '1px solid #ccc',
+                background: nodeStyle.backgroundColor,
+                border: `1px solid ${nodeStyle.borderColor}`,
                 borderRadius: '5px',
                 fontSize: '0.9rem',
                 lineHeight: '1.2',
-                minWidth: NODE_WIDTH - 16,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                minWidth: NODE_WIDTH - 16,                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
+                {nodeStyle.label && (
+                    <div style={{
+                        fontSize: '0.7rem',
+                        color: nodeStyle.labelColor,
+                        marginBottom: '2px',
+                        fontWeight: 500
+                    }}>
+                        {nodeStyle.label}
+                    </div>
+                )}
                 <div style={{
                     fontWeight: 'bold',
                     marginBottom: '4px',
-                    color: '#333'
+                    color: nodeStyle.labelColor
                 }}>
                     {nodeProps.data.label}
                 </div>
@@ -96,12 +171,23 @@ const CustomNode = (nodeProps: { data: RecipeNode['data'] }) => {
                         size="small"
                         native={false}
                         className="nodrag"
-                        sx={{
-                            fontSize: '11px',
+                        sx={{                            fontSize: '11px',
                             backgroundColor: 'white',
                             width: '100%',
                             '.MuiSelect-select': {
                                 padding: '4px 8px'
+                            },
+                            '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: nodeStyle.borderColor !== '#ccc' ? 
+                                    `${nodeStyle.borderColor}60` : undefined
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                borderColor: nodeStyle.borderColor !== '#ccc' ? 
+                                    nodeStyle.borderColor : undefined
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                borderColor: nodeStyle.borderColor !== '#ccc' ? 
+                                    nodeStyle.borderColor : undefined
                             }
                         }}
                         MenuProps={{
@@ -215,15 +301,6 @@ const edgeTypes: EdgeTypes = {
 const getMainOutput = (recipe: CraftingRecipe): RecipeOutput => {
     // Return first output or first guaranteed output if there are multiple
     return recipe.outputs.find(out => !out.chance) || recipe.outputs[0];
-};
-
-const getNodeQuantity = (recipe: CraftingRecipe | undefined, ingredient: IngredientNode | undefined): number => {
-    if (!recipe) {
-        return ingredient?.totalQuantity || 0;
-    }
-    const mainOutput = getMainOutput(recipe);
-    const qty = mainOutput.quantity;
-    return typeof qty === 'number' ? qty : Math.floor((qty.min + qty.max) / 2);
 };
 
 const buildGraph = (

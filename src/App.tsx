@@ -1,8 +1,10 @@
-import { RecipeCalculator } from './components/RecipeCalculator'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
-import CssBaseline from '@mui/material/CssBaseline'
-import { Container } from '@mui/material'
 import './App.css'
+import { useState } from 'react';
+import ItemSelector from './components/ItemSelector/ItemSelector';
+import { SelectedItemContext } from './Context';
+import ItemDetail from './components/ItemDetail/ItemDetail';
+import { Box } from '@mui/material';
 
 const theme = createTheme({
   palette: {
@@ -16,13 +18,21 @@ const theme = createTheme({
   },
 });
 
+
 function App() {
+  const [selectedItem, setSelectedItem] = useState('');
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <RecipeCalculator />
-      </Container>
+      <Box width="600px" flex={1}>
+        <SelectedItemContext.Provider value={selectedItem}>
+          <Box width={"100%"} pb={5}>
+            <ItemSelector setSelectedItem={setSelectedItem} />
+          </Box>
+          <Box width={"100%"} justifyContent="center">
+            <ItemDetail />
+          </Box>
+        </SelectedItemContext.Provider>
+      </Box>
     </ThemeProvider>
   )
 }

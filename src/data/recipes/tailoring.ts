@@ -49,7 +49,8 @@ export const tailoringRecipes = addProfessionRecipes(PROFESSIONS.Tailoring)
         outputs: [{ itemName: 'Rough Woven Shirt', quantity: 1 }],
         effort: 200,
         ingredients: [
-            { itemName: 'Rough Cloth', quantity: 4 },
+            { itemName: 'Rough Cloth', quantity: 5 },
+            { itemName: 'Rough Leather', quantity: 2 },
         ],
     },
     {
@@ -58,6 +59,7 @@ export const tailoringRecipes = addProfessionRecipes(PROFESSIONS.Tailoring)
         effort: 200,
         ingredients: [
             { itemName: 'Rough Cloth', quantity: 4 },
+            { itemName: 'Rough Leather', quantity: 1 },
         ],
     },
     {
@@ -74,6 +76,7 @@ export const tailoringRecipes = addProfessionRecipes(PROFESSIONS.Tailoring)
         effort: 200,
         ingredients: [
             { itemName: 'Rough Cloth', quantity: 4 },
+            { itemName: 'Rough Leather', quantity: 1 },
         ],
     },
     {

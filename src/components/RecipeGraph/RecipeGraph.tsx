@@ -3,8 +3,6 @@ import type {
     Node,
     Edge,
     Connection,
-    NodeTypes,
-    EdgeTypes
 } from 'reactflow';
 import ReactFlow,
 {
@@ -14,63 +12,25 @@ import ReactFlow,
     useNodesState,
     useEdgesState,
     Panel,
-    Position,
-    getBezierPath,
-    Handle,
     MarkerType
 } from 'reactflow';
-import { Box, IconButton, Tooltip, Select, MenuItem, type SelectChangeEvent } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
-import type { CraftingRecipe, RecipeOutput } from '../types/recipes';
-import { ALL_RECIPES } from '../data/recipes';
-import { PROFESSIONS, STRUCTURES, type Profession, type Structure } from '../types/constants';
+import type { CraftingRecipe, RecipeOutput } from '../../types/recipes';
+import { ALL_RECIPES } from '../../data/recipes';
 import 'reactflow/dist/style.css';
+import { CustomRecipeNode, type CustomRecipeNodeProps } from './CustomRecipeNode';
+import { CustomRecipeEdge } from './CustomRecipeEdge';
+import type { CustomItemNodeProps } from './CustomItemNode';
 
-// Define colors for each profession
-const PROFESSION_COLORS: Record<Profession, string> = {
-    [PROFESSIONS.Carpentry]: '#8B4513', // Brown
-    [PROFESSIONS.Masonry]: '#808080', // Gray
-    [PROFESSIONS.Farming]: '#228B22', // Forest Green
-    [PROFESSIONS.Fishing]: '#4682B4', // Steel Blue
-    [PROFESSIONS.Hunting]: '#8B0000', // Dark Red
-    [PROFESSIONS.Mining]: '#696969', // Dim Gray
-    [PROFESSIONS.Foraging]: '#556B2F', // Dark Olive Green
-    [PROFESSIONS.Forestry]: '#006400', // Dark Green
-    [PROFESSIONS.Leatherworking]: '#CD853F', // Peru
-    [PROFESSIONS.Smithing]: '#B8860B', // Dark Goldenrod
-    [PROFESSIONS.Scholar]: '#4B0082', // Indigo
-    [PROFESSIONS.Tailoring]: '#483D8B', // Dark Slate Blue
-    [PROFESSIONS.Cooking]: '#D2691E', // Chocolate
-};
-
-// Define colors for each structure
-const STRUCTURE_COLORS: Record<Structure, string> = {
-    [STRUCTURES.Farm]: PROFESSION_COLORS.Farming,
-    [STRUCTURES.Kiln]: PROFESSION_COLORS.Masonry,
-    [STRUCTURES.Oven]: PROFESSION_COLORS.Cooking,
-    [STRUCTURES.Smelter]: PROFESSION_COLORS.Smithing,
-    [STRUCTURES.TanningTub]: PROFESSION_COLORS.Leatherworking,
-    [STRUCTURES.Loom]: PROFESSION_COLORS.Tailoring,
-};
 
 interface RecipeGraphProps {
     recipe: CraftingRecipe;
     quantity: number;
-    recipeChoices: Map<string, CraftingRecipe>;
-    onRecipeSelect: (itemName: string, recipe: CraftingRecipe) => void;
 }
 
-interface RecipeNode extends Node {
-    data: {
-        label: string;
-        quantity: number;
-        recipe?: CraftingRecipe;
-        alternativeRecipes?: CraftingRecipe[];
-        outputItem: string;
-        onRecipeSelect: (itemName: string, recipe: CraftingRecipe) => void;
-    };
-}
+type RecipeNodeType = Node<CustomRecipeNodeProps>;
 
 interface IngredientNode {
     itemName: string;
@@ -78,237 +38,14 @@ interface IngredientNode {
     requiredBy: Set<string>;
 }
 
-const CustomNode = (nodeProps: { data: RecipeNode['data'] }) => {
-    const alternativeRecipes = nodeProps.data.alternativeRecipes || [];
-    const hasAlternatives = alternativeRecipes.length > 1; // Only show if there are multiple choices
-    const currentRecipe = nodeProps.data.recipe;
-
-    // Get color based on recipe type (profession or structure)
-    const getNodeColor = (recipe: CraftingRecipe | undefined) => {
-        if (!recipe) {
-            return {
-                backgroundColor: '#fff',
-                borderColor: '#ccc',
-                labelColor: '#333'
-            };
-        }
-
-        if (recipe.recipeType === 'active' && recipe.profession) {
-            return {
-                backgroundColor: `${PROFESSION_COLORS[recipe.profession]}20`,
-                borderColor: PROFESSION_COLORS[recipe.profession],
-                labelColor: PROFESSION_COLORS[recipe.profession],
-                label: recipe.profession
-            };
-        }
-
-        if (recipe.recipeType === 'passive' && recipe.structure) {
-            return {
-                backgroundColor: `${STRUCTURE_COLORS[recipe.structure]}20`,
-                borderColor: STRUCTURE_COLORS[recipe.structure],
-                labelColor: STRUCTURE_COLORS[recipe.structure],
-                label: recipe.structure
-            };
-        }
-
-        return {
-            backgroundColor: '#fff',
-            borderColor: '#ccc',
-            labelColor: '#333'
-        };
-    };
-
-    const nodeStyle = getNodeColor(currentRecipe);
-
-    const handleRecipeSelect = (event: SelectChangeEvent<string>) => {
-        console.log('Selection changed:', event.target.value);
-        const selectedRecipe = alternativeRecipes.find(r => r.recipeName === event.target.value);
-        console.log('Found recipe:', selectedRecipe);
-        if (selectedRecipe) {
-            console.log('Calling onRecipeSelect with:', nodeProps.data.outputItem, selectedRecipe);
-            nodeProps.data.onRecipeSelect(nodeProps.data.outputItem, selectedRecipe);
-        }
-    };
-    return (
-        <div style={{ position: 'relative' }}>            
-        <div style={{
-                padding: '8px',
-                background: nodeStyle.backgroundColor,
-                border: `1px solid ${nodeStyle.borderColor}`,
-                borderRadius: '5px',
-                fontSize: '0.9rem',
-                lineHeight: '1.2',
-                minWidth: NODE_WIDTH - 16,                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}>
-                {nodeStyle.label && (
-                    <div style={{
-                        fontSize: '0.7rem',
-                        color: nodeStyle.labelColor,
-                        marginBottom: '2px',
-                        fontWeight: 500
-                    }}>
-                        {nodeStyle.label}
-                    </div>
-                )}
-                <div style={{
-                    fontWeight: 'bold',
-                    marginBottom: '4px',
-                    color: nodeStyle.labelColor
-                }}>
-                    {nodeProps.data.label}
-                </div>
-                <div style={{
-                    marginBottom: hasAlternatives ? '8px' : 0,
-                    color: '#666'
-                }}>
-                    ×{nodeProps.data.quantity}
-                </div>
-                {hasAlternatives && (
-                    <div className="nodrag">                        
-                    <Select
-                        value={currentRecipe?.recipeName || ''}
-                        onChange={handleRecipeSelect}
-                        size="small"
-                        native={false}
-                        className="nodrag"
-                        sx={{                            fontSize: '11px',
-                            backgroundColor: 'white',
-                            width: '100%',
-                            '.MuiSelect-select': {
-                                padding: '4px 8px'
-                            },
-                            '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: nodeStyle.borderColor !== '#ccc' ? 
-                                    `${nodeStyle.borderColor}60` : undefined
-                            },
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: nodeStyle.borderColor !== '#ccc' ? 
-                                    nodeStyle.borderColor : undefined
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                borderColor: nodeStyle.borderColor !== '#ccc' ? 
-                                    nodeStyle.borderColor : undefined
-                            }
-                        }}
-                        MenuProps={{
-                            PaperProps: {
-                                style: {
-                                    maxHeight: 200
-                                }
-                            }
-                        }}
-                    >
-                        {alternativeRecipes.map((recipe: CraftingRecipe) => (
-                            <MenuItem
-                                key={recipe.recipeName}
-                                value={recipe.recipeName}
-                                sx={{
-                                    fontSize: '11px',
-                                    padding: '4px 8px'
-                                }}
-                            >
-                                {recipe.ingredients.map((i) => `${i.quantity}x${i.itemName}`).join(', ')}
-                            </MenuItem>))}
-                    </Select>
-                    </div>
-                )}
-            </div>
-            <Handle
-                type="source"
-                position={Position.Bottom}
-                id="bottom"
-                style={{ background: '#555' }}
-                isConnectable={false}
-            />
-            <Handle
-                type="target"
-                position={Position.Top}
-                id="top"
-                style={{ background: '#555' }}
-                isConnectable={false}
-            />
-        </div>
-    );
-};
-
-const CustomEdge = ({
-    id,
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    sourcePosition,
-    targetPosition,
-    style = {},
-    label,
-    markerEnd,
-}: any) => {
-    const [edgePath] = getBezierPath({
-        sourceX,
-        sourceY,
-        sourcePosition: sourcePosition || Position.Bottom,
-        targetX,
-        targetY,
-        targetPosition: targetPosition || Position.Top,
-    });
-
-    return (
-        <>
-            <path
-                id={id}
-                style={{
-                    strokeWidth: 1,
-                    stroke: '#999',
-                    strokeDasharray: '5 5',
-                    opacity: 0.7,
-                    ...style
-                }}
-                className="react-flow__edge-path"
-                d={edgePath}
-                markerEnd={markerEnd}
-            />
-            {label && (
-                <text
-                    style={{
-                        fontSize: '11px',
-                        fill: '#666',
-                        fontWeight: 400,
-                    }}
-                >
-                    <textPath
-                        href={`#${id}`}
-                        style={{ fontSize: '12px' }}
-                        startOffset="50%"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                    >
-                        {label}
-                    </textPath>
-                </text>
-            )}
-        </>
-    );
-};
-
-const nodeTypes: NodeTypes = {
-    custom: CustomNode
-};
-
-const edgeTypes: EdgeTypes = {
-    custom: CustomEdge
-};
-
 const getMainOutput = (recipe: CraftingRecipe): RecipeOutput => {
-    // Return first output or first guaranteed output if there are multiple
-    return recipe.outputs.find(out => !out.chance) || recipe.outputs[0];
+    return recipe.outputs[0];
 };
 
 const buildGraph = (
     initialRecipe: CraftingRecipe,
-    targetQuantity: number,
-    recipeChoices: Map<string, CraftingRecipe>,
-    onRecipeSelect: (itemName: string, recipe: CraftingRecipe) => void
-): { nodes: RecipeNode[]; edges: Edge[] } => {
+    targetQuantity: number
+): { nodes: RecipeNodeType[]; edges: Edge[] } => {
     const ingredients = new Map<string, IngredientNode>();
     const recipesMap = new Map<string, CraftingRecipe>();
     const recipeTree = new Map<string, Map<string, number>>();
@@ -332,10 +69,10 @@ const buildGraph = (
     ALL_RECIPES.forEach(recipe => {
         const mainOutput = getMainOutput(recipe);
         const dependencyChain = new Set<string>();
-        
+
         const findCyclicDeps = (currentRecipe: CraftingRecipe, chain: Set<string>) => {
             const output = getMainOutput(currentRecipe);
-            
+
             if (chain.has(output.itemName)) {
                 if (!cyclicDependencies.has(mainOutput.itemName)) {
                     cyclicDependencies.set(mainOutput.itemName, new Set());
@@ -343,17 +80,17 @@ const buildGraph = (
                 cyclicDependencies.get(mainOutput.itemName)!.add(output.itemName);
                 return;
             }
-            
+
             chain.add(output.itemName);
-            
+
             currentRecipe.ingredients.forEach(ing => {
-                const recipes = ALL_RECIPES.filter(r => 
+                const recipes = ALL_RECIPES.filter(r =>
                     r.outputs.some(o => o.itemName === ing.itemName)
                 );
                 recipes.forEach(r => findCyclicDeps(r, new Set(chain)));
             });
         };
-        
+
         findCyclicDeps(recipe, dependencyChain);
     });
 
@@ -363,20 +100,14 @@ const buildGraph = (
         }
 
         // Get all recipes that produce this item
-        const recipes = ALL_RECIPES.filter(recipe => 
+        const recipes = ALL_RECIPES.filter(recipe =>
             recipe.outputs.some(output => output.itemName === itemName)
         );
-        
-        // Add currently selected recipe if it exists and isn't in the list
-        const currentRecipe = recipeChoices.get(itemName);
-        if (currentRecipe && !recipes.some(r => r.recipeName === currentRecipe.recipeName)) {
-            recipes.push(currentRecipe);
-        }
-        
+
         if (recipes.length > 0) {
             alternativeRecipesMap.set(itemName, recipes);
         }
-        
+
         return recipes;
     };
 
@@ -394,15 +125,15 @@ const buildGraph = (
 
         const mainOutput = getMainOutput(currentRecipe);
         const currentPath = [...path, mainOutput.itemName].join('->');
-        
+
         if (processedPaths.has(currentPath)) {
             return;
         }
         processedPaths.add(currentPath);
 
         // Calculate how many batches we need based on target quantity
-        const outputQty = typeof mainOutput.quantity === 'number' ? 
-            mainOutput.quantity : 
+        const outputQty = typeof mainOutput.quantity === 'number' ?
+            mainOutput.quantity :
             Math.floor((mainOutput.quantity.min + mainOutput.quantity.max) / 2);
 
         const batchesNeeded = Math.ceil(qty / outputQty);
@@ -419,7 +150,7 @@ const buildGraph = (
             // Calculate exact quantity needed for this ingredient
             const ingQty = ingredient.quantity * batchesNeeded;
             ingredientNode.totalQuantity = ingQty;
-            
+
             // Update recipe tree
             currentRecipe.outputs.forEach(output => {
                 if (!recipeTree.has(output.itemName)) {
@@ -429,13 +160,12 @@ const buildGraph = (
             });
 
             // Check for cyclic dependencies
-            const isCyclic = currentRecipe.outputs.some(output => 
+            const isCyclic = currentRecipe.outputs.some(output =>
                 cyclicDependencies.get(output.itemName)?.has(ingredient.itemName)
             );
-            
-            const selectedRecipe = recipeChoices.get(ingredient.itemName);
+
             const recipes = getRecipesForItem(ingredient.itemName);
-            const bestRecipe = selectedRecipe || recipes[0];
+            const bestRecipe = recipes[0];
 
             // Only process if not cyclic or hasn't been processed in this branch
             if (bestRecipe && (!isCyclic || !processedItems.has(ingredient.itemName))) {
@@ -448,11 +178,11 @@ const buildGraph = (
         // Process outputs after ingredients
         currentRecipe.outputs.forEach(output => {
             const outputIngredient = getOrCreateIngredient(output.itemName);
-            const actualOutputQty = typeof output.quantity === 'number' ? 
-                output.quantity : 
+            const actualOutputQty = typeof output.quantity === 'number' ?
+                output.quantity :
                 Math.floor((output.quantity.min + output.quantity.max) / 2);
-            
-            outputIngredient.totalQuantity = batchesNeeded * actualOutputQty * (output.chance || 1);
+
+            outputIngredient.totalQuantity = batchesNeeded * actualOutputQty;
 
             // Add recipe to map for this output
             recipesMap.set(output.itemName, currentRecipe);
@@ -463,7 +193,7 @@ const buildGraph = (
     collectIngredients(initialRecipe, targetQuantity, new Set());
 
     // Build nodes and edges
-    const nodes: RecipeNode[] = [];
+    const nodes: RecipeNodeType[] = [];
     const edges: Edge[] = [];
     const processedNodes = new Map<string, string>();
 
@@ -479,43 +209,42 @@ const buildGraph = (
             data: {
                 label: itemName,
                 quantity: ingredients.get(itemName)?.totalQuantity || 0,
-                recipe: recipeChoices.get(itemName) || recipe,
+                recipe: recipe,
                 alternativeRecipes: alternatives,
                 outputItem: itemName,
-                onRecipeSelect
             }
         });
     });
 
-    // Then add nodes for all ingredients that don't have recipes
-    Array.from(ingredients.entries())
-        .filter(([itemName]) => !processedNodes.has(itemName))
-        .forEach(([itemName, ingredient]) => {
+    // ✅ PATCHED: Add ingredient-only nodes
+    ingredients.forEach((ingredientNode, itemName) => {
+        if (!processedNodes.has(itemName)) {
             const nodeId = `node-${itemName}`;
             processedNodes.set(itemName, nodeId);
-            const alternatives = alternativeRecipesMap.get(itemName) || [];
-            const recipe = recipeChoices.get(itemName);
             nodes.push({
                 id: nodeId,
-                type: 'custom',
+                type: 'custom', // Optionally use a different node type like 'basic'
                 position: { x: 0, y: 0 },
                 data: {
                     label: itemName,
-                    quantity: ingredient.totalQuantity,
-                    recipe: recipe,
-                    alternativeRecipes: alternatives,
+                    quantity: ingredientNode.totalQuantity,
+                    recipe: null,
+                    alternativeRecipes: [],
                     outputItem: itemName,
-                    onRecipeSelect
                 }
             });
-        });
+        }
+    });
 
     // Add edges between nodes
-    recipeTree.forEach((ingredients, outputItem) => {
+    recipeTree.forEach((ingredientsMap, outputItem) => {
         const outputNodeId = processedNodes.get(outputItem);
-        if (!outputNodeId) return;
+        if (!outputNodeId) {
+            console.warn(`No node found for output: ${outputItem}`);
+            return;
+        }
 
-        ingredients.forEach((quantity, ingredientItem) => {
+        ingredientsMap.forEach((quantity, ingredientItem) => {
             const ingredientNodeId = processedNodes.get(ingredientItem);
             if (!ingredientNodeId) {
                 console.warn(`No node found for ingredient: ${ingredientItem}`);
@@ -526,12 +255,15 @@ const buildGraph = (
                 id: `${ingredientNodeId}-${outputNodeId}`,
                 source: ingredientNodeId,
                 target: outputNodeId,
-                sourceHandle: 'bottom',
-                targetHandle: 'top',
+                sourceHandle: 'output',
+                targetHandle: 'input',
                 label: String(quantity),
                 type: 'custom',
                 style: { strokeWidth: 2 },
-                markerEnd: 'arrowclosed'
+                markerEnd: {
+                    type: MarkerType.ArrowClosed
+                },
+                data: { quantity } // optionally useful for edge rendering
             });
         });
     });
@@ -544,11 +276,11 @@ const NODE_HEIGHT = 70;  // Further reduced from 80 to 70
 const VERTICAL_SPACING = 40;  // Further reduced from 60 to 40
 const HORIZONTAL_SPACING = 40;  // Reduced from 50 to 40
 
-interface NodeWithLevel extends RecipeNode {
+interface NodeWithLevel extends RecipeNodeType {
     level?: number;
 }
 
-const layoutNodes = (nodes: RecipeNode[], edges: Edge[]): RecipeNode[] => {
+const layoutNodes = (nodes: RecipeNodeType[], edges: Edge[]): RecipeNodeType[] => {
     // Create a map of node dependencies (what nodes each node depends on)
     const dependencies = new Map<string, Set<string>>();
     const dependents = new Map<string, Set<string>>();
@@ -573,7 +305,7 @@ const layoutNodes = (nodes: RecipeNode[], edges: Edge[]): RecipeNode[] => {
     });
 
     // Find root nodes (nodes with no dependencies)
-    const rootNodes = nodes.filter(node => 
+    const rootNodes = nodes.filter(node =>
         dependencies.get(node.id)?.size === 0 && !cycles.has(node.id)
     );
 
@@ -621,7 +353,7 @@ const layoutNodes = (nodes: RecipeNode[], edges: Edge[]): RecipeNode[] => {
             // Only add to queue if all dependencies are processed
             const allDepsProcessed = Array.from(dependencies.get(depId) || [])
                 .every(d => processed.has(d));
-            
+
             if (!processed.has(depId) && allDepsProcessed) {
                 queue.push(depNode);
             }
@@ -645,7 +377,7 @@ const layoutNodes = (nodes: RecipeNode[], edges: Edge[]): RecipeNode[] => {
 
     // Position nodes on each level
     nodesByLevel.forEach((levelNodes, level) => {
-        const totalWidth = levelNodes.length * NODE_WIDTH + 
+        const totalWidth = levelNodes.length * NODE_WIDTH +
             (levelNodes.length - 1) * HORIZONTAL_SPACING;
         const startX = -totalWidth / 2;
 
@@ -664,7 +396,7 @@ const defaultEdgeOptions = {
     type: 'custom',
     animated: false,
     style: {
-        strokeWidth: 1,
+        strokeWidth: 3,
         stroke: '#999',
         strokeDasharray: '5 5',
         strokeOpacity: 0.7,
@@ -672,7 +404,7 @@ const defaultEdgeOptions = {
     markerEnd: { type: MarkerType.ArrowClosed },
 };
 
-export const RecipeGraph = ({ recipe, quantity, recipeChoices, onRecipeSelect }: RecipeGraphProps) => {
+export const RecipeGraph = ({ recipe, quantity }: RecipeGraphProps) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -681,11 +413,11 @@ export const RecipeGraph = ({ recipe, quantity, recipeChoices, onRecipeSelect }:
     const setEdgesRef = useCallback((eds: Edge[]) => setEdges(eds), [setEdges]);
     // Update graph when recipe, quantity, or recipe choices change
     useEffect(() => {
-        const { nodes: newNodes, edges: newEdges } = buildGraph(recipe, quantity, recipeChoices, onRecipeSelect);
+        const { nodes: newNodes, edges: newEdges } = buildGraph(recipe, quantity);
         const layoutedNodes = layoutNodes(newNodes, newEdges);
         setNodes(layoutedNodes);
         setEdges(newEdges);
-    }, [recipe, quantity, recipeChoices, setNodes, setEdgesRef, onRecipeSelect]);
+    }, [recipe, quantity, setNodes, setEdgesRef]);
 
     const handleConnect = useCallback(
         (params: Connection) => {
@@ -726,8 +458,8 @@ export const RecipeGraph = ({ recipe, quantity, recipeChoices, onRecipeSelect }:
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={handleConnect}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
+                nodeTypes={{ custom: CustomRecipeNode }}
+                edgeTypes={{ custom: CustomRecipeEdge }}
                 defaultEdgeOptions={defaultEdgeOptions}
                 connectionMode={ConnectionMode.Loose}
                 fitView

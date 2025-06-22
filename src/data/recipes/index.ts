@@ -1,5 +1,5 @@
 import type { CraftingRecipe } from '../../types/recipes';
-import { farmRecipes, farmingRecipes } from './farming';
+import { farmRecipes, farmingStationRecipes } from './farming';
 import { foragingRecipes } from './foraging';
 import { kilnRecipes, masonryStationRecipes } from './masonry';
 import { tailoringRecipes, loomRecipes } from './tailoring';
@@ -16,7 +16,7 @@ import { scholarStationRecipes } from './scholar';
 // Combine all recipes
 export const ALL_RECIPES: CraftingRecipe[] = [
     farmRecipes,
-    farmingRecipes,
+    farmingStationRecipes,
     foragingRecipes,
     kilnRecipes,
     masonryStationRecipes,

@@ -1,6 +1,8 @@
-import { Stack, Typography } from "@mui/material";
+import { List, ListItem, ListItemText, Stack, Typography } from "@mui/material";
 import type { CraftingRecipe } from "../../types/recipes";
 import { getFullRecipeTree } from "../../utils/getFullRecipeTree";
+import { summarizeRecipeTree } from "../../utils/summarizeRecipeTree";
+import { TocTwoTone } from "@mui/icons-material";
 
 type ItemCalcsProps = {
     quantityNeeded: number;
@@ -12,24 +14,33 @@ const ItemCalcs = (props: ItemCalcsProps) => {
     const { recipe, quantityNeeded } = props;
 
     const recipeTree = getFullRecipeTree(recipe, quantityNeeded);
-    const { totalEffort, totalSeconds } = recipeTree.reduce((total, recipe) => {
-        if (recipe.recipe?.recipeType === 'active') total.totalEffort += recipe.recipe.effort * recipe.quantity;
-        if (recipe.recipe?.recipeType === 'passive') total.totalSeconds += recipe.recipe.seconds * recipe.quantity;
+    const recipeTreeSummary = summarizeRecipeTree(recipeTree);
 
-        return total;
-    }, { totalEffort: 0, totalSeconds: 0 });
+    const { totalEffort, totalTime } = Object.keys(recipeTreeSummary).reduce((acc, curr) => {
+        acc.totalEffort += recipeTreeSummary[curr].totalEffort;
+        acc.totalTime += recipeTreeSummary[curr].totalTime;
+        return acc;
+    }, { totalEffort: 0, totalTime: 0 });
+
+    console.dir(recipeTreeSummary, { depth: null });
 
     return (
-        <Stack direction="row" justifyContent={'space-evenly'}>
-            <Stack direction={'row'} spacing={1}>
-                <Typography>Total Effort:</Typography>
+
+        <List>
+            <ListItemText key="total" primary={`Total`} secondary={(<Stack>
                 <Typography>{totalEffort} EP</Typography>
-            </Stack>
-            <Stack direction={'row'} spacing={1}>
-                <Typography>Total Time:</Typography>
-                <Typography>{totalSeconds}s</Typography>
-            </Stack>
-        </Stack>
+                <Typography>{totalTime}s</Typography>
+            </Stack>)}></ListItemText>
+            {
+                // Make sure these entries are sorted from rawest to most processed
+                Object.values(recipeTreeSummary).sort((a, b) => b.maxDepth - a.maxDepth).map((recipeStats) => (
+                    <ListItemText key={recipeStats.recipeName} primary={`${recipeStats.recipeName} x${recipeStats.totalRuns}`} secondary={(<Stack>
+                        <Typography>{recipeStats.totalEffort} EP</Typography>
+                        <Typography>{recipeStats.totalTime}s</Typography>
+                    </Stack>)}>
+                    </ListItemText>
+                ))}
+        </List>
     );
 };
 

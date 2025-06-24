@@ -54,7 +54,7 @@ const ItemDetail = () => {
                             <Select
                                 labelId="source-recipe-select-label"
                                 id="source-recipe-select"
-                                value={selectedSourceRecipe?.recipeName || ""}
+                                value={selectedSourceRecipe?.recipeName || ''}
                                 onChange={handleRecipeChange}
                             >
                                 {madeByRecipes.map((recipe) => (
@@ -69,14 +69,14 @@ const ItemDetail = () => {
                     {selectedSourceRecipe && <ItemCalcs quantityNeeded={desiredQuantity} recipe={selectedSourceRecipe} />}
                 </Stack>
             </Paper>
-            {selectedSourceRecipe && (
+            {/* {selectedSourceRecipe && (
 
                 <Paper>
                     <Box padding={2}>
                         <RecipeGraph recipe={selectedSourceRecipe} quantity={desiredQuantity} />
                     </Box>
                 </Paper>
-            )}
+            )} */}
         </Stack>
     );
 };

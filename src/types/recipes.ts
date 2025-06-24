@@ -29,4 +29,10 @@ export interface PassiveRecipe extends RecipeBase {
     structure: Structure;
 }
 
-export type CraftingRecipe = ActiveRecipe | PassiveRecipe;
+export interface RawRecipe {
+    recipeType: 'raw';
+    recipeName: string;
+    outputs: RecipeOutput[];
+}
+
+export type CraftingRecipe = ActiveRecipe | PassiveRecipe | RawRecipe;

@@ -1,4 +1,4 @@
-import useRecipes from '../../hooks/useRecipes';
+import useItems from '../../hooks/useItems';
 import { Autocomplete, TextField } from '@mui/material';
 
 
@@ -8,7 +8,7 @@ type ItemSelectorProps = {
 const ItemSelector = (props: ItemSelectorProps) => {
     const { setSelectedItem } = props;
 
-    const { recipes } = useRecipes();
+    const { items } = useItems();
 
     const handleSelectionChange = (_event: React.SyntheticEvent, value: string | null) => {
         const selectedItemName = value ?? '';
@@ -17,9 +17,10 @@ const ItemSelector = (props: ItemSelectorProps) => {
 
     return (
         <Autocomplete
-            options={[...new Set(recipes.map((recipes) => recipes.outputs.map((output) => output.itemName)).flat())].sort()}
+            options={Object.keys(items).sort()}
             onChange={handleSelectionChange}
             renderInput={(params) => (<TextField {...params} label="Select an item..." variant="filled" />)}
+            fullWidth
         />
     );
 }

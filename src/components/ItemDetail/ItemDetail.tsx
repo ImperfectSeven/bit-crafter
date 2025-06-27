@@ -1,83 +1,157 @@
-import { useContext, useState } from "react";
-import { SelectedItemContext } from "../../Context";
+import { useEffect, useState } from "react";
 import {
     Box,
-    Divider,
     FormControl,
-    Input,
     InputLabel,
     MenuItem,
-    Paper,
     Select,
-    Stack,
+    TextField,
     Typography,
 } from "@mui/material";
-import useRecipes from "../../hooks/useRecipes";
-import type { CraftingRecipe } from "../../types/recipes";
-import { RecipeGraph } from "../RecipeGraph/RecipeGraph";
-import ItemCalcs from "./ItemCalcs";
+import { buildRecipeTree, computeTotalsFromTree } from "../../utils/buildRecipeTree";
+import type { IngredientNode } from "../../types";
+import type { ItemName } from "../../data/items";
 
-const ItemDetail = () => {
-    const selectedItem = useContext(SelectedItemContext);
-    const { recipes } = useRecipes();
-    const [selectedSourceRecipe, setSelectedSourceRecipe] = useState<CraftingRecipe | null>(null);
-    const [desiredQuantity, setDesiredQuantity] = useState<number>(1);
+type ItemDetailProps = {
+    itemName: ItemName;
+}
 
-    const madeByRecipes = recipes.filter((recipe) =>
-        recipe.outputs.some((output) => output.itemName === selectedItem)
-    );
 
-    const handleRecipeChange = (event: any) => {
-        const selectedName = event.target.value as string;
-        const foundRecipe = madeByRecipes.find((recipe) => recipe.recipeName === selectedName) || null;
-        setSelectedSourceRecipe(foundRecipe);
-    };
+const ItemDetail = (props: ItemDetailProps) => {
+    const { itemName } = props;
+    const [quantity, setQuantity] = useState(1);
+    const [recipeTree, setRecipeTree] = useState<IngredientNode | null>(null);
+    const [recipeSelectionMap, setRecipeSelectionMap] = useState<Record<ItemName, number>>({});
+    const [rawMaterials, setRawMaterials] = useState<Record<string, number>>({});
+    const [totalEffort, setTotalEffort] = useState(0);
+    const [totalTime, setTotalTime] = useState(0);
+
+    // Rebuild tree and totals whenever inputs change
+    useEffect(() => {
+        const tree = buildRecipeTree(itemName, quantity, new Set(), recipeSelectionMap);
+        setRecipeTree(tree);
+
+        const totals = computeTotalsFromTree(tree, recipeSelectionMap);
+        setRawMaterials(totals.rawMaterials);
+        setTotalEffort(totals.totalEffort);
+        setTotalTime(totals.totalTime);
+    }, [itemName, quantity, recipeSelectionMap]);
+
+    // Recursive renderer
+    function renderNode(node: IngredientNode, depth = 0): React.ReactNode {
+        const recipeOptions = node.recipePathOptions ?? [];
+        const selectedIndex = recipeSelectionMap[node.itemName] ?? 0;
+
+        return (
+            <Box key={`${node.itemName}-${depth}`} sx={{
+                pl: 2,
+                ml: 0,
+                borderLeft: depth > 0 ? '2px dashed #666' : undefined,
+                borderRadius: 1,
+                backgroundColor: depth === 0 ? 'transparent' : '#222',
+                mt: 1,
+            }}>
+                <Typography variant="body1"
+                    sx={{
+                        fontWeight: depth === 0 ? 'bold' : 'normal',
+                        color: '#ddd',
+                        ml: `${depth * 1.5}rem`, // progressively indent each depth level
+                        textAlign: 'left',
+                    }}>
+                    {node.quantity}x <strong>{node.itemName}</strong>
+                </Typography>
+
+                {/* If multiple recipes, allow choosing one */}
+                {recipeOptions && recipeOptions.length > 1 && (
+                    <FormControl size="small" sx={{ mt: 1, mb: 1 }}>
+                        <InputLabel>Recipe</InputLabel>
+                        <Select
+                            label="Recipe"
+                            value={selectedIndex}
+                            onChange={(e) => {
+                                const newSelection = {
+                                    ...recipeSelectionMap,
+                                    [node.itemName]: Number(e.target.value),
+                                };
+                                setRecipeSelectionMap(newSelection);
+                            }}
+                        >
+                            {recipeOptions.map((path, idx) => (
+                                <MenuItem key={idx} value={idx}>
+                                    {path.recipe.ingredients.map(i => `${i.quantity}x ${i.itemName}`).join(", ")}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                )}
+
+                {/* Render child nodes from the selected recipe */}
+                {recipeOptions &&
+                    (<Box sx={{ mt: 1 }}>
+                        {recipeOptions[selectedIndex]?.ingredients.map(child =>
+                            renderNode(child, depth + 1)
+                        )}
+                    </Box>)
+                }
+            </Box>
+        );
+    }
 
     return (
-        <Stack padding={2} spacing={2}>
-            <Paper>
-                <Stack direction="column" padding={2} spacing={2}>
-                    <Typography variant="h3" textAlign="center">{selectedItem}</Typography>
-                    <Stack direction="row" spacing={3} alignItems="center" justifyContent="center" marginTop={2}>
-                        <FormControl variant="standard" sx={{ maxWidth: 100 }}>
-                            <InputLabel htmlFor="desired-quantity">Quantity</InputLabel>
-                            <Input
-                                id="desired-quantity"
-                                type="number"
-                                value={desiredQuantity}
-                                onChange={(e) => setDesiredQuantity(parseInt(e.target.value) || 0)}
-                                inputProps={{ min: 1 }}
-                            />
-                        </FormControl>
-                        <FormControl variant="standard" sx={{ minWidth: 300 }}>
-                            <InputLabel id="source-recipe-select-label">Source Recipe</InputLabel>
-                            <Select
-                                labelId="source-recipe-select-label"
-                                id="source-recipe-select"
-                                value={selectedSourceRecipe?.recipeName || ''}
-                                onChange={handleRecipeChange}
-                            >
-                                {madeByRecipes.map((recipe) => (
-                                    <MenuItem key={recipe.recipeName} value={recipe.recipeName}>
-                                        {recipe.recipeName}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Stack>
-                    <Divider />
-                    {selectedSourceRecipe && <ItemCalcs quantityNeeded={desiredQuantity} recipe={selectedSourceRecipe} />}
-                </Stack>
-            </Paper>
-            {/* {selectedSourceRecipe && (
+        <Box mt={4}>
+            {/* Quantity Input */}
+            <TextField
+                type="number"
+                label="Quantity"
+                value={quantity}
+                onChange={(e) => {
+                    const num = Math.max(1, parseInt(e.target.value) || 1);
+                    setQuantity(num);
+                }}
+                sx={{ mb: 3 }}
+            />
 
-                <Paper>
-                    <Box padding={2}>
-                        <RecipeGraph recipe={selectedSourceRecipe} quantity={desiredQuantity} />
-                    </Box>
-                </Paper>
-            )} */}
-        </Stack>
+            {/* Tree View */}
+            <Box
+                mt={4}
+                p={2}
+                sx={{
+                    border: '1px solid #444',
+                    borderRadius: 2,
+                    backgroundColor: '#1a1a1a',
+                }}
+            >
+                <Typography variant="h6" sx={{ mt: 3 }}>
+                    Recipe Tree:
+                </Typography>
+                {recipeTree && renderNode(recipeTree)}
+            </Box>
+
+            <Box
+                mt={4}
+                p={2}
+                sx={{
+                    border: '1px solid #444',
+                    borderRadius: 2,
+                    backgroundColor: '#1a1a1a',
+                }}
+            >
+
+                {/* Totals Summary */}
+                <Typography variant="h6">Raw Materials:</Typography>
+                <ul>
+                    {Object.entries(rawMaterials).map(([name, qty]) => (
+                        <li key={name}>{qty}x {name}</li>
+                    ))}
+                </ul>
+
+                <Typography variant="h6" sx={{ mt: 2 }}>
+                    Total Effort: {totalEffort}
+                </Typography>
+                <Typography variant="h6">Total Passive Time: {Math.round(totalTime)}s</Typography>
+            </Box>
+
+        </Box>
     );
 };
 

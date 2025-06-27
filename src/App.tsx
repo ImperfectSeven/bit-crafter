@@ -1,38 +1,25 @@
-import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { ThemeProvider } from '@mui/material/styles'
 import './App.css'
 import { useState } from 'react';
 import ItemSelector from './components/ItemSelector/ItemSelector';
-import { SelectedItemContext } from './Context';
 import ItemDetail from './components/ItemDetail/ItemDetail';
-import { Box } from '@mui/material';
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#646cff',
-    },
-    background: {
-      default: '#f5f5f5',
-    },
-  },
-});
-
+import { Container, Typography } from '@mui/material';
+import darkTheme from './styles/darkTheme';
 
 function App() {
-  const [selectedItem, setSelectedItem] = useState('');
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+
   return (
-    <ThemeProvider theme={theme}>
-      <Box width="600px" flex={1}>
-        <SelectedItemContext.Provider value={selectedItem}>
-          <Box width={"100%"} pb={5}>
-            <ItemSelector setSelectedItem={setSelectedItem} />
-          </Box>
-          <Box width={"100%"} justifyContent="center">
-            <ItemDetail />
-          </Box>
-        </SelectedItemContext.Provider>
-      </Box>
+    <ThemeProvider theme={darkTheme}>
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Crafting Helper
+        </Typography>
+
+        <ItemSelector setSelectedItem={setSelectedItem} />
+
+        {selectedItem && <ItemDetail itemName={selectedItem} />}
+      </Container>
     </ThemeProvider>
   )
 }

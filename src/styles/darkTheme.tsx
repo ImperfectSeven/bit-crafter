@@ -3,19 +3,24 @@ import { createTheme } from '@mui/material/styles';
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
-    primary: {
-      main: '#333',
-    },
-    secondary: {
-      main: '#666',
-    },
     background: {
-      default: '#222',
-      paper: '#333',
+      default: '#121212',
+      paper: '#1e1e1e',
     },
     text: {
-      primary: '#fff',
-      secondary: '#ccc',
+      primary: '#ffffff',
+      secondary: '#cccccc',
+    },
+    primary: {
+      main: '#90caf9', // optional, a nice blue
+    },
+    secondary: {
+      main: '#f48fb1', // optional, soft pink
+    },
+  },
+  typography: {
+    allVariants: {
+      color: '#ffffff',
     },
   },
 });

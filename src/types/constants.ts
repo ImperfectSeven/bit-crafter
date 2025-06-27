@@ -22,6 +22,20 @@ export const STRUCTURES = {
     Smelter: 'Smelter',
     TanningTub: 'Tanning Tub',
     Loom: 'Loom',
+
+    FarmingStation: "Farming Station",
+    TailoringStation: "Tailoring Station",
+    SmithingStation: "Smithing Station",
+    CarpentryStation: "Carpentry Station",
+    ForestryStation: "Forestry Station",
+    ScholarStation: "Scholar Station",
+    ForagingStation: "Foraging Station",
+    CookingStation: "Cooking Station",
+    FishingStation: "Fishing Station",
+    LeatherworkingStation: "Leatherworking Station",
+    HuntingStation: "Hunting Station",
+    MasonryStation: "Masonry Station",
+    MiningStation: "Mining Station",
 } as const;
 export type Structure = (typeof STRUCTURES)[keyof typeof STRUCTURES];
 

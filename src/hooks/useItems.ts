@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import itemService from '../services/itemService';
-import type { CraftingRecipe } from '../types/recipes';
 import type { ItemRecipe } from '../types';
 
 /**

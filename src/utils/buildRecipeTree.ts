@@ -107,7 +107,7 @@ export function computeTotalsFromTree(
   walk(tree);
 
   // Process batches: group every 10 crafts and take max time per batch
-  for (const [station, times] of Object.entries(passiveCrafts)) {
+  for (const [_station, times] of Object.entries(passiveCrafts)) {
     const batches: number[][] = [];
 
     for (let i = 0; i < times.length; i += 10) {

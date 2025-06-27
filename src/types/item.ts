@@ -1,4 +1,4 @@
-import { type Profession, type Structure, type Tier } from "./constants";
+import { type Profession, type Structure } from "./constants";
 
 export type ItemRecipe = {
     output: number | { min: number; max: number };

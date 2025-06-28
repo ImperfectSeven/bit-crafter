@@ -9,5 +9,5 @@ export const BAIT_FISH_TIERS = ['Moonlit Crawdad', 'Driftwood Crayfish', 'Hunchb
 export const ORE_TIERS = ['Ferralith', 'Pyrelite', 'Emarium'] as const;
 export const HUNTING_TIERS = ['Sagi Bird', 'Nubi Goat', 'Cervus Deer'] as const;
 
-export const effortCalc = (baseEffort: number, tier: number) => baseEffort * (1 + tier);
+export const effortCalc = (baseEffort: number, tier: number) => baseEffort * (1 + (tier * 0.3)); // TODO: This still isn't exactly right for all tiers. Need to figure out how to account for this better.
 export const timeCalc = (tier: number) => ([5, 15, 30][tier] ?? 0) * 60;

@@ -1,5 +1,5 @@
 import { PROFESSIONS, STRUCTURES, type ItemRecipe } from "../../types";
-import { ROUGH_TIERS, TIERS } from "./item-tiers";
+import { ROUGH_TIERS, TIERS, timeCalc } from "./item-tiers";
 
 const tailoringStationItems = (tiers: readonly number[]): Record<string, ItemRecipe[]> => {
 
@@ -146,8 +146,6 @@ const tailoringLoomItems = (tiers: readonly number[]): Record<string, ItemRecipe
     return tiers.reduce<Record<string, ItemRecipe[]>>((acc, _currPrefix, tier) => {
         const roughTier = ROUGH_TIERS[tier];
 
-        const timeCalc = ([5, 15][tier] ?? 0) * 60;
-
         const common = {
             tier,
             profession: PROFESSIONS.Tailoring,
@@ -160,9 +158,9 @@ const tailoringLoomItems = (tiers: readonly number[]): Record<string, ItemRecipe
                 ...common,
                 output: 1,
                 ingredients: [
-                    { itemName: `${roughTier} Spool of Thread`, quantity: 1 },
+                    { itemName: `${roughTier} Spool of Thread`, quantity: tier === 2 ? 2 : 1 },
                 ],
-                timeInSeconds: timeCalc,
+                timeInSeconds: timeCalc(tier),
             }],
         };
     }, {});

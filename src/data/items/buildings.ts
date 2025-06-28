@@ -1,5 +1,5 @@
 import { PROFESSIONS, STRUCTURES, type ItemRecipe } from "../../types";
-import { FISH_TIERS, ROUGH_TIERS, BASIC_TIERS, effortCalc, TIERS, ORE_TIERS } from "./item-tiers";
+import { ROUGH_TIERS, BASIC_TIERS, TIERS, ORE_TIERS } from "./item-tiers";
 
 
 const constantItems = (): Record<string, ItemRecipe[]> => {

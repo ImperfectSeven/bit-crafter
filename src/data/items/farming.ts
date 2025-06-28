@@ -1,5 +1,5 @@
 import { PROFESSIONS, STRUCTURES, type ItemRecipe } from "../../types";
-import { FISH_TIERS, ROUGH_TIERS, BASIC_TIERS, effortCalc, timeCalc, TIERS } from "./item-tiers";
+import { FISH_TIERS, ROUGH_TIERS, BASIC_TIERS, effortCalc, TIERS } from "./item-tiers";
 
 
 
@@ -121,7 +121,7 @@ const basePassiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]
                         { itemName: `${basicTier} Embergrain Seeds`, quantity: 1 },
                         { itemName: `${basicTier} Fertilizer`, quantity: 1 }
                     ].concat(tier > 0 ? [{ itemName: `Water Bucket`, quantity: 1 }] : []),
-                    timeInSeconds: timeCalc(tier),
+                    timeInSeconds: fromSeedTimeCalc(tier),
                 },
                 {
                     ...common,
@@ -130,7 +130,7 @@ const basePassiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]
                         tier === 0 ? { itemName: `Wild Grain Seeds`, quantity: 5 } : { itemName: `${prevBasicTier} Embergrain Plant`, quantity: 5 },
                         { itemName: `${basicTier} Fertilizer`, quantity: 1 }
                     ],
-                    timeInSeconds: timeCalc(tier),
+                    timeInSeconds: fromPlantTimeCalc(tier),
                 },
             ],
             [`${basicTier} Starbulb Plant`]: [
@@ -141,7 +141,7 @@ const basePassiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]
                         { itemName: `${basicTier} Starbulb Seeds`, quantity: 1 },
                         { itemName: `${basicTier} Fertilizer`, quantity: 1 }
                     ].concat(tier > 0 ? [{ itemName: `Water Bucket`, quantity: 1 }] : []),
-                    timeInSeconds: timeCalc(tier),
+                    timeInSeconds: fromSeedTimeCalc(tier),
                 },
                 {
                     ...common,
@@ -150,7 +150,7 @@ const basePassiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]
                         tier === 0 ? { itemName: `Wild Vegetable Seeds`, quantity: 5 } : { itemName: `${prevBasicTier} Starbulb Plant`, quantity: 5 },
                         { itemName: `${basicTier} Fertilizer`, quantity: 1 }
                     ],
-                    timeInSeconds: timeCalc(tier),
+                    timeInSeconds: fromPlantTimeCalc(tier),
                 },
             ],
             [`${basicTier} Wispweave Plant`]: [
@@ -161,7 +161,7 @@ const basePassiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]
                         { itemName: `${basicTier} Wispweave Seeds`, quantity: 1 },
                         { itemName: `${basicTier} Fertilizer`, quantity: 1 }
                     ].concat(tier > 0 ? [{ itemName: `Water Bucket`, quantity: 1 }] : []),
-                    timeInSeconds: timeCalc(tier),
+                    timeInSeconds: fromSeedTimeCalc(tier),
                 },
                 {
                     ...common,
@@ -170,7 +170,7 @@ const basePassiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]
                         tier === 0 ? { itemName: `Wild Fiberplant Seeds`, quantity: 5 } : { itemName: `${prevBasicTier} Wispweave Plant`, quantity: 5 },
                         { itemName: `${basicTier} Fertilizer`, quantity: 1 }
                     ],
-                    timeInSeconds: timeCalc(tier),
+                    timeInSeconds: fromPlantTimeCalc(tier),
                 },
             ],
         };

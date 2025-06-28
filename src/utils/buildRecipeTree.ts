@@ -20,7 +20,9 @@ export function buildRecipeTree(
   const recipes = ItemData[itemName];
   const recipePathOptions: RecipePath[] = recipes.map(recipe => {
     const ingredients: IngredientNode[] = recipe.ingredients.map(ingredient => {
-      const totalQty = ingredient.quantity * quantity;
+      const recipeOutput = (typeof recipe.output === "object") ? (recipe.output.max + recipe.output.min) / 2 : recipe.output;
+      // Need to account for the number of items produced by the recipe and the quantity requested to determine how many times we need to run the recipe.
+      const totalQty = ingredient.quantity * Math.ceil(quantity / recipeOutput);
 
       if (ItemData[ingredient.itemName as ItemName]) {
         return buildRecipeTree(

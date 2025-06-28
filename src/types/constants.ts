@@ -1,5 +1,6 @@
 export const PROFESSIONS = {
     Carpentry: 'Carpentry',
+    Construction: 'Construction',
     Masonry: 'Masonry',
     Farming: 'Farming',
     Fishing: 'Fishing',
@@ -16,6 +17,7 @@ export const PROFESSIONS = {
 export type Profession = (typeof PROFESSIONS)[keyof typeof PROFESSIONS];
 
 export const STRUCTURES = {
+    None: 'None',
     Farm: 'Farm',
     Kiln: 'Kiln',
     Oven: 'Oven',

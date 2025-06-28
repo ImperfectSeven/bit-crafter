@@ -1,5 +1,5 @@
 import { type ItemRecipe, PROFESSIONS, STRUCTURES } from "../../types";
-import { ROUGH_TIERS, effortCalc, BASIC_TIERS, TIERS } from "./item-tiers";
+import { ROUGH_TIERS, effortCalc, BASIC_TIERS, TIERS, ORE_TIERS } from "./item-tiers";
 
 const baseActiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]> => {
 
@@ -7,6 +7,8 @@ const baseActiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]>
         const roughTier = ROUGH_TIERS[tier];
         const prevRoughTier = tier > 0 ? ROUGH_TIERS[tier - 1] : null;
         const basicTier = BASIC_TIERS[tier];
+
+        const prevOreTier = tier > 0 ? ORE_TIERS[tier - 1] : null;
 
         const common = {
             tier,
@@ -28,7 +30,9 @@ const baseActiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]>
                 {
                     ...common,
                     output: 1,
-                    ingredients: [{ itemName: `${roughTier} Stripped Wood`, quantity: 1 }],
+                    ingredients: [
+                        { itemName: `${roughTier} Stripped Wood`, quantity:  tier <= 1 ? 1 : 2 }
+                    ].concat(tier === 2 ? [{ itemName: `Woodworking Sandpaper`, quantity: 1 }] : []),
                     effort: effortCalc(40, tier),
                 }
             ],
@@ -36,14 +40,18 @@ const baseActiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]>
                 {
                     ...common,
                     output: 1,
-                    ingredients: [{ itemName: `${roughTier} Plank`, quantity: 5 }, { itemName: `${basicTier} Wood Polish`, quantity: 1 }].concat(prevRoughTier ? [{ itemName: `Refined ${prevRoughTier} Plank`, quantity: 2 }] : []),
+                    ingredients: [
+                        { itemName: `${roughTier} Plank`, quantity: 5 }, { itemName: `${basicTier} Wood Polish`, quantity: 1 }
+                    ].concat(prevRoughTier ? [{ itemName: `Refined ${prevRoughTier} Plank`, quantity: 2 }] : []),
                     effort: effortCalc(100, tier),
                 }
             ],
             [`${roughTier} Timber`]: [{
                 ...common,
                 output: 1,
-                ingredients: [{ itemName: `${roughTier} Plank`, quantity: 20 }],
+                ingredients: [
+                    { itemName: `${roughTier} Plank`, quantity: 20 }
+                ].concat(tier > 1 ? [{ itemName: `${prevOreTier} Nails`, quantity: 10 }] : []),
                 effort: effortCalc(100, tier),
             }],
             [`${roughTier} Wood Plank Package`]: [{

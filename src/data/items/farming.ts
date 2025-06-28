@@ -101,6 +101,9 @@ const basePassiveItems = (tiers: readonly number[]): Record<string, ItemRecipe[]
         const basicTier = BASIC_TIERS[tier];
         const prevBasicTier = tier > 0 ? BASIC_TIERS[tier - 1] : null;
 
+        const fromPlantTimeCalc = (tier: number) => ([5, 15, 30][tier] ?? 0) * 60;
+        const fromSeedTimeCalc = (tier: number) => ([5, 15, 60][tier] ?? 0) * 60;
+
 
         const common = {
             tier,

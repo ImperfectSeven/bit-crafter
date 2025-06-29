@@ -3,7 +3,7 @@ import './App.css'
 import { useState } from 'react';
 import ItemSelector from './components/ItemSelector/ItemSelector';
 import ItemDetail from './components/ItemDetail/ItemDetail';
-import { Container, Typography } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 import darkTheme from './styles/darkTheme';
 
 function App() {
@@ -11,17 +11,21 @@ function App() {
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Container maxWidth="md" sx={{ mt: 4 }}>
         <Typography variant="h4" gutterBottom>
           Crafting Helper
         </Typography>
 
         <ItemSelector setSelectedItem={setSelectedItem} />
 
-        {selectedItem && <ItemDetail itemName={selectedItem} />}
+        {selectedItem && (
+          <Box mt={3}>
+            <ItemDetail itemName={selectedItem} />
+          </Box>
+        )}
       </Container>
     </ThemeProvider>
   )
 }
 
-export default App
+export default App;

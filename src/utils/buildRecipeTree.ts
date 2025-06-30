@@ -1,43 +1,59 @@
-import { ItemData, type ItemName } from "../data/items";
-import type { IngredientNode,  RecipePath, RecipeTotals } from "../types";
-
+import type { IngredientNode,  RecipeTotals } from "../types";
+import { itemData } from "../data/item_data";
 
 export function buildRecipeTree(
-  itemName: ItemName,
+  itemId: string,
   quantity: number,
-  visited: Set<string> = new Set(),
-  preferredRecipeIndexMap: Record<ItemName, number> = {}
-): IngredientNode {
-  if (visited.has(itemName)) {
+  recipeSelectionMap: Record<string, number> = {},
+  visited: Set<string> = new Set()
+): IngredientNode | undefined {
+  const item = itemData[itemId];
+
+  if (!item) {
+    return;
+  }
+
+  // Prevent cycles
+  if (visited.has(itemId)) {
     return {
-      itemName,
+      itemId,
+      itemName: item.name,
       quantity,
-      recipePathOptions: undefined,
+      isRawMaterial: false
     };
   }
 
-  visited.add(itemName);
-  const recipes = ItemData[itemName];
-  const recipePathOptions: RecipePath[] = recipes.map(recipe => {
-    const ingredients: IngredientNode[] = recipe.ingredients.map(ingredient => {
-      const recipeOutput = (typeof recipe.output === "object") ? (recipe.output.max + recipe.output.min) / 2 : recipe.output;
-      // Need to account for the number of items produced by the recipe and the quantity requested to determine how many times we need to run the recipe.
-      const totalQty = ingredient.quantity * Math.ceil(quantity / recipeOutput);
+  const newVisited = new Set(visited);
+  newVisited.add(itemId);
 
-      if (ItemData[ingredient.itemName as ItemName]) {
-        return buildRecipeTree(
-          ingredient.itemName as ItemName,
-          totalQty,
-          new Set(visited),
-          preferredRecipeIndexMap
-        );
-      } else {
-        return {
-          itemName: ingredient.itemName,
-          quantity: totalQty,
-        };
-      }
-    });
+  if (!item.recipes || item.recipes.length === 0) {
+    // Raw material
+    return {
+      itemId,
+      itemName: item.name,
+      quantity,
+      isRawMaterial: true
+    };
+  }
+
+  // Choose recipe
+  const selectedIndex = recipeSelectionMap[itemId] ?? 0;
+  const selectedRecipe = item.recipes[selectedIndex];
+
+  if (!selectedRecipe) {
+    throw new Error(`No recipe at index ${selectedIndex} for item ${itemId}`);
+  }
+
+  const recipePaths = item.recipes.map((recipe) => {
+    const multiplier = Math.ceil(quantity / recipe.outputQuantity);
+    const ingredients = recipe.ingredients.map((ing: { id: string; quantity: number }) =>
+      buildRecipeTree(
+        ing.id,
+        ing.quantity * multiplier,
+        recipeSelectionMap,
+        newVisited
+      )
+    );
 
     return {
       recipe,
@@ -46,14 +62,16 @@ export function buildRecipeTree(
   });
 
   return {
-    itemName,
+    itemId,
+    itemName: item.name,
     quantity,
-    recipePathOptions,
+    recipePathOptions: recipePaths,
+    isRawMaterial: false
   };
 }
 
 export function computeTotalsFromTree(
-  tree: IngredientNode,
+  tree: IngredientNode | undefined,
   recipeSelectionMap: Record<string, number> = {}
 ): RecipeTotals {
   const totals: RecipeTotals = {
@@ -62,64 +80,40 @@ export function computeTotalsFromTree(
     totalTime: 0,
   };
 
-  // Temporarily hold time-based crafts per structure
-  const passiveCrafts: Record<string, number[]> = {};
+  if (!tree) return totals;
 
   function walk(node: IngredientNode) {
-    const options = node.recipePathOptions;
-
-    if (!options || options.length === 0) {
+    if (!node.recipePathOptions || node.recipePathOptions.length === 0) {
       // Raw material
       totals.rawMaterials[node.itemName] ??= 0;
       totals.rawMaterials[node.itemName] += node.quantity;
       return;
     }
 
-    const selectedIndex = recipeSelectionMap[node.itemName] ?? 0;
-    const selectedPath = options[selectedIndex];
+    const selectedIndex = recipeSelectionMap[node.itemId] ?? 0;
+    const selectedPath = node.recipePathOptions[selectedIndex];
+
+    if (!selectedPath) return;
+
     const recipe = selectedPath.recipe;
 
-    // Add effort directly
-    if (recipe.effort) {
-      totals.totalEffort += recipe.effort;
+    if (recipe.effortRequirement) {
+      totals.totalEffort += recipe.effortRequirement;
     }
 
-    // Handle passive crafting time
-    if (recipe.timeInSeconds && recipe.station) {
-      const outputCount =
-        typeof recipe.output === "number"
-          ? recipe.output
-          : (recipe.output.min + recipe.output.max) / 2;
-
-      const timesToRun = Math.ceil(node.quantity / outputCount);
-
-      const list = passiveCrafts[recipe.station] ?? [];
-      for (let i = 0; i < timesToRun; i++) {
-        list.push(recipe.timeInSeconds);
-      }
-      passiveCrafts[recipe.station] = list;
+    if (recipe.timeRequirement) {
+      // ⚠ Simple sum for now — you can later improve batching logic
+      totals.totalTime += recipe.timeRequirement;
     }
 
-    // Recurse
     for (const ingredientNode of selectedPath.ingredients) {
-      walk(ingredientNode);
+      if (ingredientNode) {
+        walk(ingredientNode);
+      }
     }
   }
 
   walk(tree);
-
-  // Process batches: group every 10 crafts and take max time per batch
-  for (const [_station, times] of Object.entries(passiveCrafts)) {
-    const batches: number[][] = [];
-
-    for (let i = 0; i < times.length; i += 10) {
-      batches.push(times.slice(i, i + 10));
-    }
-
-    for (const batch of batches) {
-      totals.totalTime += Math.max(...batch);
-    }
-  }
 
   return totals;
 }

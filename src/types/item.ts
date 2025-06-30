@@ -1,27 +1,12 @@
-import { type Profession, type Structure } from "./constants";
-
-export type ItemRecipe = {
-    output: number | { min: number; max: number };
-    ingredients: {
-        itemName: string,
-        quantity: number
-    }[],
-    effort?: number;
-    timeInSeconds?: number;
-    station: Structure;
-    profession: Profession;
-    tier: number;
-};
-
 export interface IngredientNode {
+  itemId: string;
   itemName: string;
   quantity: number;
-  recipePathOptions?: RecipePath[];
-}
-
-export interface RecipePath {
-  recipe: ItemRecipe;
-  ingredients: IngredientNode[];
+  isRawMaterial: boolean;
+  recipePathOptions?: {
+    recipe: ItemDataRecipe;
+    ingredients: (IngredientNode | undefined)[];
+  }[];
 }
 
 export interface RecipeTotals {
@@ -29,3 +14,21 @@ export interface RecipeTotals {
   totalEffort: number;
   totalTime: number; // in seconds
 }
+
+export type ItemData = {
+    name: string;
+    description: string;
+    tier: number;
+    rarity: number;
+    recipes: ItemDataRecipe[];
+    extractionSkill: string;
+};
+
+export type ItemDataRecipe = {
+  levelRequirement: [number, number];
+  ingredients: { id: string; quantity: number }[];
+  outputQuantity: number;
+  timeRequirement: number;
+  effortRequirement: number;
+  isPassive: boolean;
+};

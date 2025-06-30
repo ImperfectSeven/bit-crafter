@@ -1,0 +1,3 @@
+[submodule "src/data/BitCraft_GameData"]
+	path = src/data/BitCraft_GameData
+	url = https://github.com/BitCraftToolBox/BitCraft_GameData

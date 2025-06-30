@@ -13,39 +13,43 @@ import {
 } from "@mui/material";
 import { buildRecipeTree, computeTotalsFromTree } from "../../utils/buildRecipeTree";
 import type { IngredientNode } from "../../types";
-import type { ItemName } from "../../data/items";
 import { ChevronRight, ExpandMore, SwapHoriz } from "@mui/icons-material";
+import { itemData } from "../../data/item_data";
 
 type ItemDetailProps = {
-    itemName: ItemName;
+    itemId: string;
 }
 
 
-const ItemDetail = ({ itemName }: ItemDetailProps) => {
+const ItemDetail = ({ itemId }: ItemDetailProps) => {
     const [quantity, setQuantity] = useState(1);
     const [recipeTree, setRecipeTree] = useState<IngredientNode | null>(null);
-    const [recipeSelectionMap, setRecipeSelectionMap] = useState<Record<ItemName, number>>({});
-    const [collapsedMap, setCollapsedMap] = useState<Record<ItemName, boolean>>({});
+    const [recipeSelectionMap, setRecipeSelectionMap] = useState<Record<string, number>>({});
+    const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
     const [rawMaterials, setRawMaterials] = useState<Record<string, number>>({});
     const [totalEffort, setTotalEffort] = useState(0);
     const [totalTime, setTotalTime] = useState(0);
 
     useEffect(() => {
-        const tree = buildRecipeTree(itemName, quantity, new Set(), recipeSelectionMap);
-        setRecipeTree(tree);
+        console.log(`Building Tree for ${itemId}`);
+        if (itemId) {
+            const tree = buildRecipeTree(itemId, quantity, recipeSelectionMap, new Set());
+            if (tree) setRecipeTree(tree);
+            
+            const totals = computeTotalsFromTree(tree, recipeSelectionMap);
+            setRawMaterials(totals.rawMaterials);
+            setTotalEffort(totals.totalEffort);
+            setTotalTime(totals.totalTime);
+        }
 
-        const totals = computeTotalsFromTree(tree, recipeSelectionMap);
-        setRawMaterials(totals.rawMaterials);
-        setTotalEffort(totals.totalEffort);
-        setTotalTime(totals.totalTime);
-    }, [itemName, quantity, recipeSelectionMap]);
+    }, [itemId, quantity, recipeSelectionMap]);
 
 
     function renderNode(node: IngredientNode, depth = 0): React.ReactNode {
         const recipeOptions = node.recipePathOptions ?? [];
         const selectedIndex = recipeSelectionMap[node.itemName] ?? 0;
         const selectedRecipe = recipeOptions[selectedIndex];
-        const isCollapsed = collapsedMap[node.itemName] ?? true;
+        const isCollapsed = collapsedMap[node.itemName] ?? false;
         const hasAlternates = recipeOptions.length > 1;
 
         return (
@@ -120,7 +124,7 @@ const ItemDetail = ({ itemName }: ItemDetailProps) => {
                             {recipeOptions.map((path, idx) => (
                                 <MenuItem key={idx} value={idx}>
                                     {path.recipe.ingredients
-                                        .map((i) => `${i.quantity}×${i.itemName}`)
+                                        .map((i) => `${i.quantity}×${itemData[i.id].name}`)
                                         .join(", ")}
                                 </MenuItem>
                             ))}
@@ -129,7 +133,7 @@ const ItemDetail = ({ itemName }: ItemDetailProps) => {
                 )}
 
                 {!isCollapsed &&
-                    selectedRecipe?.ingredients.map((child) => renderNode(child, depth + 1))}
+                    selectedRecipe?.ingredients.map((child) => child ? renderNode(child, depth + 1) : null)}
             </Box>
         );
     }

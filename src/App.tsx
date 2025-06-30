@@ -20,7 +20,7 @@ function App() {
 
         {selectedItem && (
           <Box mt={3}>
-            <ItemDetail itemName={selectedItem} />
+            <ItemDetail itemId={selectedItem} />
           </Box>
         )}
       </Container>

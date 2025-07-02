@@ -4,8 +4,6 @@ import {
     FormControl,
     IconButton,
     InputLabel,
-    List,
-    ListItem,
     MenuItem,
     Select,
     TextField,
@@ -29,8 +27,8 @@ const ItemDetail = ({ itemId, quantity, onQuantityChange }: ItemDetailProps) => 
     const [recipeSelectionMap, setRecipeSelectionMap] = useState<Record<string, number>>({});
     const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
     const [rawMaterials, setRawMaterials] = useState<Record<string, number>>({});
-    const [totalEffort, setTotalEffort] = useState(0);
-    const [totalTime, setTotalTime] = useState(0);
+    // const [totalEffort, setTotalEffort] = useState(0);
+    // const [totalTime, setTotalTime] = useState(0);
 
     useEffect(() => {
         if (itemId) {
@@ -39,8 +37,8 @@ const ItemDetail = ({ itemId, quantity, onQuantityChange }: ItemDetailProps) => 
 
             const totals = computeTotalsFromTree(tree, recipeSelectionMap);
             setRawMaterials(totals.rawMaterials);
-            setTotalEffort(totals.totalEffort);
-            setTotalTime(totals.totalTime);
+            // setTotalEffort(totals.totalEffort);
+            // setTotalTime(totals.totalTime);
         }
 
     }, [itemId, quantity, recipeSelectionMap]);

@@ -19,11 +19,12 @@ import type { Tier } from "../../data/types";
 
 type ItemDetailProps = {
     itemId: string;
+    quantity: number;
+    onQuantityChange: (newQuantity: number) => void;
 }
 
 
-const ItemDetail = ({ itemId }: ItemDetailProps) => {
-    const [quantity, setQuantity] = useState(1);
+const ItemDetail = ({ itemId, quantity, onQuantityChange }: ItemDetailProps) => {
     const [recipeTree, setRecipeTree] = useState<IngredientNode | null>(null);
     const [recipeSelectionMap, setRecipeSelectionMap] = useState<Record<string, number>>({});
     const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
@@ -166,7 +167,7 @@ const ItemDetail = ({ itemId }: ItemDetailProps) => {
                 value={quantity}
                 onChange={(e) => {
                     const num = Math.max(1, parseInt(e.target.value) || 1);
-                    setQuantity(num);
+                    onQuantityChange(num);
                 }}
                 sx={{ mb: 3, width: "150px", fontSize: "1rem" }}
                 size="medium"
@@ -191,7 +192,7 @@ const ItemDetail = ({ itemId }: ItemDetailProps) => {
                         const tier = Number(tierStr) as Tier;
                         const materials = groupedByTier[tier];
 
-                        return !materials ? null :(
+                        return !materials ? null : (
                             <Box
                                 key={tier}
                                 sx={{

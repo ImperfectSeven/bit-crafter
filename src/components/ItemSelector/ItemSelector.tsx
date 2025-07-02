@@ -10,21 +10,21 @@ const itemOptions = Object.keys(itemData)
 
 type ItemSelectorProps = {
   setSelectedItem: (value: string) => void;
+  selectedItem: string | null;
 };
 
-const ItemSelector = ({ setSelectedItem }: ItemSelectorProps) => {
+const ItemSelector = ({ setSelectedItem, selectedItem }: ItemSelectorProps) => {
   const handleSelectionChange = (
     _event: React.SyntheticEvent,
     value: { id: string } & ItemData | null
   ) => {
-    const selectedItemId = value?.id ?? '';
-    console.log(`Selected item: ${selectedItemId}`);
-    setSelectedItem(selectedItemId);
+    setSelectedItem(value?.id ?? '');
   };
 
   return (
     <Autocomplete
       options={itemOptions}
+      value={itemOptions.find((o) => o.id === selectedItem) || null}
       getOptionKey={(option) => option.id}
       getOptionLabel={(option) => option.name}
       onChange={handleSelectionChange}

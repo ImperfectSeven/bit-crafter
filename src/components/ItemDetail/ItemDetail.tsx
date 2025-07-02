@@ -49,7 +49,7 @@ const ItemDetail = ({ itemId }: ItemDetailProps) => {
         const recipeOptions = node.recipePathOptions ?? [];
         const selectedIndex = recipeSelectionMap[node.itemName] ?? 0;
         const selectedRecipe = recipeOptions[selectedIndex];
-        const isCollapsed = collapsedMap[node.itemName] ?? false;
+        const isCollapsed = collapsedMap[node.itemName] ?? true;
         const hasAlternates = recipeOptions.length > 1;
 
         return (

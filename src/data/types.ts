@@ -23,6 +23,8 @@ export type CraftedItemStack = [
     ]
 ];
 
+export type Tier = -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12  | 13 | 14;
+
 export type ItemDesc = {
     id: number;
     name: string;
@@ -33,7 +35,7 @@ export type ItemDesc = {
     secondary_knowledge_id: number;
     model_asset_name: string;
     icon_asset_name: string;
-    tier: number;
+    tier: Tier;
     tag: string;
     rarity: [number, any];
     compendium_entry: true;

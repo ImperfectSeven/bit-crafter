@@ -1,3 +1,5 @@
+import type { Tier } from "../data/types";
+
 export interface IngredientNode {
   itemId: string;
   itemName: string;
@@ -18,7 +20,7 @@ export interface RecipeTotals {
 export type ItemData = {
     name: string;
     description: string;
-    tier: number;
+    tier: Tier;
     rarity: number;
     recipes: ItemDataRecipe[];
     extractionSkill: string;

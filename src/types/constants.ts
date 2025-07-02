@@ -1,8 +1,8 @@
 import type { Tier } from "../data/types";
 
 export const TierNames = {
-    [-1]: '',
-    0: '',
+    [-1]: 'Common',
+    0: 'Trade Good',
     1: 'I',
     2: 'II',
     3: 'III',
@@ -20,8 +20,8 @@ export const TierNames = {
 } as const satisfies Record<Tier, string>;
 
 export const TierColors: Record<Tier, string> = {
-    [-1]: "#ccc",
-    0: "#ccc",
+    [-1]: "#413A64",
+    0: "#413A64",
     1: "#636A74",
     2: "#875F45",
     3: "#5C6F4D",

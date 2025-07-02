@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Box,
     FormControl,
@@ -12,9 +12,10 @@ import {
     Typography,
 } from "@mui/material";
 import { buildRecipeTree, computeTotalsFromTree } from "../../utils/buildRecipeTree";
-import type { IngredientNode } from "../../types";
+import { TierColors, TierNames, type IngredientNode } from "../../types";
 import { ChevronRight, ExpandMore, SwapHoriz } from "@mui/icons-material";
 import { itemData } from "../../data/item_data";
+import type { Tier } from "../../data/types";
 
 type ItemDetailProps = {
     itemId: string;
@@ -31,11 +32,10 @@ const ItemDetail = ({ itemId }: ItemDetailProps) => {
     const [totalTime, setTotalTime] = useState(0);
 
     useEffect(() => {
-        console.log(`Building Tree for ${itemId}`);
         if (itemId) {
             const tree = buildRecipeTree(itemId, quantity, recipeSelectionMap, new Set());
             if (tree) setRecipeTree(tree);
-            
+
             const totals = computeTotalsFromTree(tree, recipeSelectionMap);
             setRawMaterials(totals.rawMaterials);
             setTotalEffort(totals.totalEffort);
@@ -43,6 +43,21 @@ const ItemDetail = ({ itemId }: ItemDetailProps) => {
         }
 
     }, [itemId, quantity, recipeSelectionMap]);
+
+    // Group rawMaterials by tier using useMemo so it recalculates when rawMaterials changes
+    const groupedByTier = useMemo(() => {
+        const grouped: Partial<Record<Tier, { name: string; quantity: number }[]>> = {};
+
+        Object.entries(rawMaterials).forEach(([itemName, quantity]) => {
+            const itemEntry = Object.values(itemData).find(i => i.name === itemName);
+            if (!itemEntry) return;
+            const tier = itemEntry.tier;
+            if (!grouped[tier]) grouped[tier] = [];
+            grouped[tier].push({ name: itemName, quantity });
+        });
+
+        return grouped;
+    }, [rawMaterials]);
 
 
     function renderNode(node: IngredientNode, depth = 0): React.ReactNode {
@@ -166,23 +181,46 @@ const ItemDetail = ({ itemId }: ItemDetailProps) => {
                     minHeight: "200px",
                 }}
             >
-                <Typography variant="h4" sx={{ mb: 1 }}>
+                <Typography variant="h4" sx={{ mb: 2 }}>
                     Raw Materials:
                 </Typography>
-                <List>
-                    {Object.entries(rawMaterials).map(([name, qty]) => (
-                        <ListItem key={name}>
-                            <Typography variant="body1">{qty}x {name}</Typography>
-                        </ListItem>
-                    ))}
-                </List>
 
-                <Typography variant="h6" sx={{ mt: 2, fontSize: "1.1rem" }}>
-                    Total Effort: {totalEffort}
-                </Typography>
-                <Typography variant="h6" sx={{ fontSize: "1.1rem" }}>
-                    Total Passive Time: {Math.round(totalTime)}s
-                </Typography>
+                {Object.keys(groupedByTier)
+                    .sort((a, b) => Number(a) - Number(b))
+                    .map((tierStr) => {
+                        const tier = Number(tierStr) as Tier;
+                        const materials = groupedByTier[tier];
+
+                        return !materials ? null :(
+                            <Box
+                                key={tier}
+                                sx={{
+                                    border: "1px solid #555",
+                                    borderRadius: 2,
+                                    p: 1.5,
+                                    mb: 2,
+                                    backgroundColor: "#222",
+                                }}
+                            >
+                                <Typography
+                                    variant="h6"
+                                    sx={{
+                                        color: TierColors[tier] || "#ccc",
+                                        fontWeight: "bold",
+                                        mb: 1,
+                                    }}
+                                >
+                                    {`${tier > 0 ? 'Tier ' : ''}${TierNames[tier]}`}
+                                </Typography>
+
+                                {materials.sort((a, b) => a.name.localeCompare(b.name)).map((mat) => (
+                                    <Typography key={mat.name} sx={{ ml: 2 }}>
+                                        {mat.quantity}× {mat.name}
+                                    </Typography>
+                                ))}
+                            </Box>
+                        );
+                    })}
             </Box>
 
             <Box

@@ -164,7 +164,7 @@ const ItemDetail = ({ itemId, quantity, onQuantityChange }: ItemDetailProps) => 
             <TextField
                 type="number"
                 label="Quantity"
-                value={quantity}
+                value={quantity ?? 1}
                 onChange={(e) => {
                     const num = Math.max(1, parseInt(e.target.value) || 1);
                     onQuantityChange(num);
@@ -227,10 +227,10 @@ const ItemDetail = ({ itemId, quantity, onQuantityChange }: ItemDetailProps) => 
             <Box
                 mt={4}
                 sx={{
-                    width: "100%",           // fill parent (Container)
-                    maxWidth: "800px",       // or whatever you want the tree section width to cap at
-                    minWidth: "600px",       // match your app's min width
-                    overflowX: "auto"
+                    width: "100%",
+                    maxWidth: "800px",
+                    minWidth: "600px",
+                    overflowX: "auto",
                 }}
             >
                 <Box
@@ -240,9 +240,7 @@ const ItemDetail = ({ itemId, quantity, onQuantityChange }: ItemDetailProps) => 
                         borderRadius: 2,
                         backgroundColor: "#1a1a1a",
                         minHeight: "300px",
-                        width: "100%",
-                        minWidth: "100%",
-                        maxWidth: "100%",
+                        display: "inline-block",    // let this box size itself to content
                     }}
                 >
                     <Typography variant="h4" sx={{ mb: 2 }}>

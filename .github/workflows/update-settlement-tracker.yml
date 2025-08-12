@@ -1,0 +1,25 @@
+name: Update Google Sheet
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Runs every hour
+  workflow_dispatch:     # Allows manual trigger
+
+jobs:
+  update-sheet:
+    runs-on: ubuntu-latest
+    environment: BWB
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - run: npm install
+
+      - run: node src/scripts/inventory-scraper.js
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          CLAIM_ID: ${{ secrets.CLAIM_ID }}

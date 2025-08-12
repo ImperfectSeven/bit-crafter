@@ -22,11 +22,13 @@ async function scrapeInventoriesTable(claimId: string): Promise<TableData> {
     // Click the "Inventories" tab if needed
     const inventoriesTabHandle = await page.evaluateHandle(() => {
         const xpath = "//button[contains(., 'Inventories')]";
+        // @ts-ignore
         const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
         return result.singleNodeValue as HTMLElement | null;
     });
     const combinedTotalHandle = await page.evaluateHandle(() => {
         const xpath = "//button[contains(., 'Combined Total')]";
+        // @ts-ignore
         const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
         return result.singleNodeValue as HTMLElement | null;
     });
@@ -53,6 +55,7 @@ async function scrapeInventoriesTable(claimId: string): Promise<TableData> {
         '#bits-c191 > div > div:nth-child(2) > div:nth-child(3) > div > table tr',
         rows => rows.map(row => {
             const cells = Array.from(row.querySelectorAll('th, td'));
+            // @ts-ignore
             return cells.map(cell => cell.textContent?.trim() || '');
         })
     );

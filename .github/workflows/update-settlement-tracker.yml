@@ -17,9 +17,8 @@ jobs:
           node-version: '18'
 
       - run: npm install
-      - run: npm install -g ts-node typescript
 
-      - run: ts-node --loader ts-node/esm src/scripts/inventory-scraper.ts
+      - run: npx ts-node --loader ts-node/esm src/scripts/inventory-scraper.ts
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}

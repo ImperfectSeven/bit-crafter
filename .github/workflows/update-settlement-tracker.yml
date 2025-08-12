@@ -18,7 +18,7 @@ jobs:
 
       - run: npm install
 
-      - run: NODE_OPTIONS="--loader ts-node/esm" npx ts-node src/scripts/inventory-scraper.ts
+      - run: NODE_OPTIONS="--loader ts-node/esm --experimental-specifier-resolution=node" npx ts-node src/scripts/inventory-scraper.ts
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}

@@ -1,18 +1,20 @@
 import * as puppeteer from 'puppeteer';
-// import fs from 'fs';
+import { LOCAL_ENV } from './inventory-scraper.local.ts';
 import { google } from 'googleapis';
 import type { OAuth2Client } from 'googleapis-common';
 
 type TableData = string[][];
 
-const GOOGLE_CREDENTIALS = process.env.GOOGLE_CREDENTIALS || '{}';
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-const CLAIM_ID = process.env.CLAIM_ID;
+const GOOGLE_CREDENTIALS = process.env.GOOGLE_CREDENTIALS || LOCAL_ENV.GOOGLE_CREDENTIALS;
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID || LOCAL_ENV.SPREADSHEET_ID;
+const CLAIM_ID = process.env.CLAIM_ID || LOCAL_ENV.CLAIM_ID;
 
 async function scrapeInventoriesTable(claimId: string): Promise<TableData> {
     const url = `https://bitjita.com/claims/${claimId}`;
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+         args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle2' });
 
@@ -202,12 +204,11 @@ async function main() {
         throw new Error('CLAIM_ID environment variable is not set');
     }
     // Item, Name, Total, Tier, Rarity
+    console.info('Scraping data...');
     const tableData = await scrapeInventoriesTable(CLAIM_ID);
 
     const filteredItems = filterItems(tableData);
-    console.log('Filtered Items:');
-    console.log(filteredItems);
-
+    console.log('Writing to sheet...');
     await writeToSheet(filteredItems);
 }
 

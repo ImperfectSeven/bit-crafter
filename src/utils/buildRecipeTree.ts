@@ -1,4 +1,4 @@
-import type { IngredientNode,  RecipeTotals } from "../types";
+import type { IngredientNode, RecipeTotals } from "../types";
 import { itemData } from "../data/item_data";
 
 export function buildRecipeTree(
@@ -116,4 +116,9 @@ export function computeTotalsFromTree(
   walk(tree);
 
   return totals;
+}
+
+export function findItemIdByName(name: string): string | undefined {
+  const itemId = Object.keys(itemData).find((id) => itemData[id].name === name);
+  return itemId;
 }

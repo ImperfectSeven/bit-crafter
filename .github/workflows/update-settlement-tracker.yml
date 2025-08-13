@@ -19,7 +19,7 @@ jobs:
       - run: npm install
       - run: npm run compile
 
-      - run: node dist/src/scripts/inventory-scraper.js
+      - run: node dist/src/scripts/settlement-upgrade-tracker/index.js
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}

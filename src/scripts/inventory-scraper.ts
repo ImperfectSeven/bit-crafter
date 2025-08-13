@@ -1,13 +1,41 @@
 import * as puppeteer from 'puppeteer';
-import { LOCAL_ENV } from './inventory-scraper.local.ts';
 import { google } from 'googleapis';
 import type { OAuth2Client } from 'googleapis-common';
 
 type TableData = string[][];
 
-const GOOGLE_CREDENTIALS = process.env.GOOGLE_CREDENTIALS || LOCAL_ENV.GOOGLE_CREDENTIALS;
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID || LOCAL_ENV.SPREADSHEET_ID;
-const CLAIM_ID = process.env.CLAIM_ID || LOCAL_ENV.CLAIM_ID;
+interface Config {
+    GOOGLE_CREDENTIALS: string;
+    SPREADSHEET_ID: string;
+    CLAIM_ID: string;
+}
+
+// Dynamically load config from env or local file
+async function getConfig(): Promise<Config> {
+    const GOOGLE_CREDENTIALS = process.env.GOOGLE_CREDENTIALS;
+    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+    const CLAIM_ID = process.env.CLAIM_ID;
+
+    if (GOOGLE_CREDENTIALS && SPREADSHEET_ID && CLAIM_ID) {
+        return { GOOGLE_CREDENTIALS, SPREADSHEET_ID, CLAIM_ID };
+    }
+
+    // Try to load local config if not all env vars are set
+    try {
+        // @ts-ignore
+        const { LOCAL_ENV } = await import('./inventory-scraper.local.ts');
+        return {
+            GOOGLE_CREDENTIALS: GOOGLE_CREDENTIALS || LOCAL_ENV.GOOGLE_CREDENTIALS,
+            SPREADSHEET_ID: SPREADSHEET_ID || LOCAL_ENV.SPREADSHEET_ID,
+            CLAIM_ID: CLAIM_ID || LOCAL_ENV.CLAIM_ID,
+        };
+    } catch (err) {
+        console.error('Failed to load environment variables', err);
+        throw new Error(
+            'Missing required environment variables and could not load inventory-scraper.local.ts'
+        );
+    }
+}
 
 async function scrapeInventoriesTable(claimId: string): Promise<TableData> {
     const url = `https://bitjita.com/claims/${claimId}`;
@@ -45,9 +73,6 @@ async function scrapeInventoriesTable(claimId: string): Promise<TableData> {
             await new Promise(resolve => setTimeout(resolve, 2000)); // Give it time to load
         }
     }
-
-    // Take screenshot of page for debugging
-    await page.screenshot({ path: 'screenshot.png', fullPage: true });
 
     // Wait for the inventories table to appear
     await page.waitForSelector('table', { timeout: 60000 });
@@ -166,7 +191,7 @@ function mapItems(tableData: TableData) {
     });
 }
 
-async function writeToSheet(data: TableData) {
+async function writeToSheet(data: TableData, GOOGLE_CREDENTIALS: string, SPREADSHEET_ID: string) {
     const auth = new google.auth.GoogleAuth({
         credentials: JSON.parse(GOOGLE_CREDENTIALS),
         scopes: ['https://www.googleapis.com/auth/spreadsheets'],
@@ -200,6 +225,9 @@ async function writeToSheet(data: TableData) {
 }
 
 async function main() {
+    const { GOOGLE_CREDENTIALS, SPREADSHEET_ID, CLAIM_ID } = await getConfig();
+
+
     if (!CLAIM_ID) {
         throw new Error('CLAIM_ID environment variable is not set');
     }
@@ -209,7 +237,7 @@ async function main() {
 
     const filteredItems = filterItems(tableData);
     console.log('Writing to sheet...');
-    await writeToSheet(filteredItems);
+    await writeToSheet(filteredItems, GOOGLE_CREDENTIALS, SPREADSHEET_ID);
 }
 
 main().catch(console.error);

@@ -12,22 +12,25 @@ interface Config {
 
 // Dynamically load config from env or local file
 async function getConfig(): Promise<Config> {
-    const GOOGLE_CREDENTIALS = process.env.GOOGLE_CREDENTIALS;
-    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-    const CLAIM_ID = process.env.CLAIM_ID;
-
-    if (GOOGLE_CREDENTIALS && SPREADSHEET_ID && CLAIM_ID) {
-        return { GOOGLE_CREDENTIALS, SPREADSHEET_ID, CLAIM_ID };
+    // Try to load from environment variables first
+    if (process.env) {
+        return {
+            GOOGLE_CREDENTIALS: process.env.GOOGLE_CREDENTIALS || '',
+            SPREADSHEET_ID: process.env.SPREADSHEET_ID || '',
+            CLAIM_ID: process.env.CLAIM_ID || ''
+        }
     }
 
     // Try to load local config if not all env vars are set
+    // If running locally, then expects a local file `inventory-scraper.local.ts` to provide defaults
+    // that file should export a `LOCAL_ENV` object with the same structure as above
     try {
         // @ts-ignore
         const { LOCAL_ENV } = await import('./inventory-scraper.local.ts');
         return {
-            GOOGLE_CREDENTIALS: GOOGLE_CREDENTIALS || LOCAL_ENV.GOOGLE_CREDENTIALS,
-            SPREADSHEET_ID: SPREADSHEET_ID || LOCAL_ENV.SPREADSHEET_ID,
-            CLAIM_ID: CLAIM_ID || LOCAL_ENV.CLAIM_ID,
+            GOOGLE_CREDENTIALS: LOCAL_ENV.GOOGLE_CREDENTIALS,
+            SPREADSHEET_ID: LOCAL_ENV.SPREADSHEET_ID,
+            CLAIM_ID: LOCAL_ENV.CLAIM_ID,
         };
     } catch (err) {
         console.error('Failed to load environment variables', err);
@@ -37,6 +40,11 @@ async function getConfig(): Promise<Config> {
     }
 }
 
+/**
+ * Scrapes the inventories table from the Bitjita claims page.
+ * @param claimId The claim ID to scrape.
+ * @returns A promise that resolves to the table data.
+ */
 async function scrapeInventoriesTable(claimId: string): Promise<TableData> {
     const url = `https://bitjita.com/claims/${claimId}`;
 
@@ -92,6 +100,11 @@ async function scrapeInventoriesTable(claimId: string): Promise<TableData> {
     return tableData;
 }
 
+/**
+ * Filters the table data to include only relevant items.
+ * @param tableData The table data to filter.
+ * @returns Filtered table data.
+ */
 function filterItems(tableData: TableData) {
     const [_header, ...rows] = tableData;
     return rows.filter(([_code, name, _total, _tier, _rarity]) => {
@@ -154,6 +167,11 @@ const ResourceNames = {
 } as const;
 type ResourceName = typeof ResourceNames[keyof typeof ResourceNames];
 
+/**
+ * Maps the table data to the format expected by the Google Sheets table we are inserting into
+ * @param tableData The table data to map.
+ * @return Mapped table data.
+ */
 function mapItems(tableData: TableData) {
     return tableData.map((row) => {
         const [_code, name, total, tier, _rarity] = row;
@@ -191,6 +209,12 @@ function mapItems(tableData: TableData) {
     });
 }
 
+/**
+ * Writes the relevant table data to the Google Sheet.
+ * @param data The table data to write.
+ * @param GOOGLE_CREDENTIALS The Google service account credentials.
+ * @param SPREADSHEET_ID The ID of the Google Sheet to write to.
+ */
 async function writeToSheet(data: TableData, GOOGLE_CREDENTIALS: string, SPREADSHEET_ID: string) {
     const auth = new google.auth.GoogleAuth({
         credentials: JSON.parse(GOOGLE_CREDENTIALS),
@@ -205,17 +229,17 @@ async function writeToSheet(data: TableData, GOOGLE_CREDENTIALS: string, SPREADS
 
     const sheetName = 'Resource Submission Logs';
 
+    // Clear the existing data but leave the header row
     await sheets.spreadsheets.values.clear({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${sheetName}!A2:F`,
+        range: `${sheetName}!A2:F`, // <-- Change range to adjust for your sheet
     });
 
-
+    // Writes data to the given sheet
     await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${sheetName}!A2`,
+        range: `${sheetName}!A2`, // <-- Change range to adjust for your sheet
         valueInputOption: 'USER_ENTERED',
-        // insertDataOption: 'INSERT_ROWS',
         requestBody: {
             values: sheetData,
         },
@@ -227,13 +251,9 @@ async function writeToSheet(data: TableData, GOOGLE_CREDENTIALS: string, SPREADS
 async function main() {
     const { GOOGLE_CREDENTIALS, SPREADSHEET_ID, CLAIM_ID } = await getConfig();
 
-
-    if (!CLAIM_ID) {
-        throw new Error('CLAIM_ID environment variable is not set');
-    }
-    // Item, Name, Total, Tier, Rarity
     console.info('Scraping data...');
     const tableData = await scrapeInventoriesTable(CLAIM_ID);
+    // Expected format: [Item, Name, Total, Tier, Rarity]
 
     const filteredItems = filterItems(tableData);
     console.log('Writing to sheet...');

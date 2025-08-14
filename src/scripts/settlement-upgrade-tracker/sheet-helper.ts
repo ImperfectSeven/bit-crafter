@@ -80,6 +80,16 @@ const AugmentedRelevantItemRegexDictionary: Record<string, RegExp> = {
     RefinedBrick: /^Refined .* Brick$/,
     RefinedIngot: /^Refined .* Ingot$/,
     RefinedPlanks: /^Refined .* Plank$/,
+    PlankPackage: /^(?!Refined ).* Plank Package$/,
+    ClothPackage: /^(?!Refined ).* Cloth Package$/,
+    LeatherPackage: /^(?!Refined ).* Leather Package$/,
+    BrickPackage: /^(?!Refined ).* Brick Package$/,
+    IngotPackage: /^(?!Refined ).* Ingot Package$/,
+    RefinedPlankPackage: /^Refined .* Plank Package$/,
+    RefinedClothPackage: /^Refined .* Cloth Package$/,
+    RefinedLeatherPackage: /^Refined .* Leather Package$/,
+    RefinedBrickPackage: /^Refined .* Brick Package$/,
+    RefinedIngotPackage: /^Refined .* Ingot Package$/,
 } as const;
 type AugmentedRelevantItemKey = keyof typeof AugmentedRelevantItemRegexDictionary;
 
@@ -262,6 +272,36 @@ const mapAugmentedItem = (augmentedItem: StoredItem, type: AugmentedRelevantItem
             }
             break;
         }
+        case 'PlankPackage':
+            baseItems.push({ resource: SheetResourceNames.Plank, tier: getSheetTier(augmentedItem.tier), quantity: 100 * augmentedItem.amount });
+            break;
+        case 'ClothPackage':
+            baseItems.push({ resource: SheetResourceNames.Cloth, tier: getSheetTier(augmentedItem.tier), quantity: 100 * augmentedItem.amount });
+            break;
+        case 'LeatherPackage':
+            baseItems.push({ resource: SheetResourceNames.Leather, tier: getSheetTier(augmentedItem.tier), quantity: 100 * augmentedItem.amount });
+            break;
+        case 'BrickPackage':
+            baseItems.push({ resource: SheetResourceNames.Brick, tier: getSheetTier(augmentedItem.tier), quantity: 100 * augmentedItem.amount });
+            break;
+        case 'IngotPackage':
+            baseItems.push({ resource: SheetResourceNames.Ingot, tier: getSheetTier(augmentedItem.tier), quantity: 100 * augmentedItem.amount });
+            break;
+        case 'RefinedPlankPackage':
+            baseItems.push(...mapAugmentedItem({ name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount, tier: augmentedItem.tier }, 'RefinedPlanks'));
+            break;
+        case 'RefinedClothPackage':
+            baseItems.push(...mapAugmentedItem({ name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount, tier: augmentedItem.tier }, 'RefinedCloth'));
+            break;
+        case 'RefinedLeatherPackage':
+            baseItems.push(...mapAugmentedItem({ name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount, tier: augmentedItem.tier }, 'RefinedLeather'));
+            break;
+        case 'RefinedBrickPackage':
+            baseItems.push(...mapAugmentedItem({ name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount, tier: augmentedItem.tier }, 'RefinedBrick'));
+            break;
+        case 'RefinedIngotPackage':
+            baseItems.push(...mapAugmentedItem({ name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount, tier: augmentedItem.tier }, 'RefinedIngot'));
+            break;
         default:
             break;
     }

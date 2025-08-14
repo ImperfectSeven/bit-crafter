@@ -18,6 +18,7 @@ jobs:
 
       - run: npm install
       - run: npm run compile
+      - run: ls -R dist/src/scripts/settlement-upgrade-tracker
 
       - run: node dist/src/scripts/settlement-upgrade-tracker/index.js
         env:

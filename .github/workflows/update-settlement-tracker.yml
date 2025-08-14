@@ -21,6 +21,7 @@ jobs:
       - run: ls -R dist/src/scripts/settlement-upgrade-tracker
 
       - run: node dist/src/scripts/settlement-upgrade-tracker/index.js
+        working-directory: .
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}

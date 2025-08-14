@@ -1,6 +1,6 @@
-import { scrapeInventoriesTable } from './scraper';
-import { mapRelevantItemData, writeToSheet } from './sheet-helper';
-import type { Config } from './types';
+import { scrapeInventoriesTable } from './scraper.js';
+import { mapRelevantItemData, writeToSheet } from './sheet-helper.js';
+import type { Config } from './types.js';
 
 /** Dynamically load config from env or local file */
 async function getConfig(): Promise<Config> {

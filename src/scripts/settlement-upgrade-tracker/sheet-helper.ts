@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { SheetResourceNames, SheetTiers, type ResourceSubmissionEntry, type SheetResourceName, type SheetTier, type StoredItem } from "./types";
+import { SheetResourceNames, SheetTiers, type ResourceSubmissionEntry, type SheetResourceName, type SheetTier, type StoredItem } from "./types.js";
 import type { OAuth2Client } from 'googleapis-common';
 
 /**

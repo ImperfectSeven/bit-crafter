@@ -1,5 +1,5 @@
 import * as puppeteer from 'puppeteer';
-import type { StoredItem } from './types';
+import type { StoredItem } from './types.js';
 
 /**
  * Scrapes the inventories table for the given claim from the Bitjita claims page.

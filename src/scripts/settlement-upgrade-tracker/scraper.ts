@@ -53,8 +53,9 @@ export const scrapeInventoriesTable = async (claimId: string): Promise<Inventory
             const itemBlocks = storageNode.querySelectorAll('[data-slot="accordion-content"] .bg-muted\\/50');
             const items: StoredItem[] = [];
 
+
             let slotIndex = 0;
-            for (const itemBlock of itemBlocks) {
+            itemBlocks.forEach((itemBlock) => {
                 const name = itemBlock.querySelector('.text-center.text-xs.font-medium')?.textContent?.trim() || '';
                 const tier = itemBlock.querySelector('.mt-1 .text-xs')?.textContent?.trim()?.replace(/[^0-9]/g, '') || '';
                 const amount = Array.from(itemBlock.querySelectorAll('div'))
@@ -70,7 +71,7 @@ export const scrapeInventoriesTable = async (claimId: string): Promise<Inventory
                     });
                     slotIndex++;
                 }
-            }
+            })
 
             results[id] = { storageName, items };
         }

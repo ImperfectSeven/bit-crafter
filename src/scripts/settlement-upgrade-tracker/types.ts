@@ -59,4 +59,8 @@ export type StoredItem = {
     name: string;
     amount: number;
     tier: number;
+    slotIndex: number;
 };
+
+/** Represents a storage inventory on a claim and the items within it */
+export type Inventory = Record<string, { storageName: string; items: StoredItem[] }>;

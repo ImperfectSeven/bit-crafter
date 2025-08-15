@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { SheetResourceNames, SheetTiers, type ResourceSubmissionEntry, type SheetResourceName, type SheetTier, type StoredItem } from "./types.js";
+import { SheetResourceNames, SheetTiers, type Inventory, type ResourceSubmissionEntry, type SheetResourceName, type SheetTier, type StoredItem } from "./types.js";
 import type { OAuth2Client } from 'googleapis-common';
 
 /**
@@ -94,41 +94,44 @@ const AugmentedRelevantItemRegexDictionary: Record<string, RegExp> = {
 type AugmentedRelevantItemKey = keyof typeof AugmentedRelevantItemRegexDictionary;
 
 /** Handles filtering out items that the sheet does not care about */
-export const mapRelevantItemData = (data: StoredItem[]): ResourceSubmissionEntry[] => {
+export const mapRelevantItemData = (data: Inventory): ResourceSubmissionEntry[] => {
     const relevantItems: ResourceSubmissionEntry[] = [];
 
-    for (const item of data) {
-        const { name } = item;
-        let isBase = false;
-        // Check if it matches any base items
-        for (const [key, regex] of Object.entries(BaseRelevantItemRegexDictionary) as [BaseRelevantItemKey, RegExp][]) {
-            if (regex.test(name)) {
-                isBase = true;
-                const mapped = mapBaseItem(item, key);
-                if (mapped) {
-                    relevantItems.push({
-                        time: new Date(),
-                        name: 'Automated Script',
-                        ...mapped,
-                    });
+    for (const [_storageId, storage] of Object.entries(data)) {
+        if (shouldIgnoreStorage(storage.items)) continue; // Skip this storage
+        for (const item of storage.items) {
+            const { name } = item;
+            let isBase = false;
+            // Check if it matches any base items
+            for (const [key, regex] of Object.entries(BaseRelevantItemRegexDictionary) as [BaseRelevantItemKey, RegExp][]) {
+                if (regex.test(name)) {
+                    isBase = true;
+                    const mapped = mapBaseItem(item, key);
+                    if (mapped) {
+                        relevantItems.push({
+                            time: new Date(),
+                            name: storage.storageName,
+                            ...mapped,
+                        });
+                    }
+                    break; // Stop checking other base items
                 }
-                break; // Stop checking other base items
             }
-        }
-        if (isBase) continue; // If it was a base item, skip checking augmented items
-        // Check if it matches any augmented items
-        for (const [key, regex] of Object.entries(AugmentedRelevantItemRegexDictionary) as [AugmentedRelevantItemKey, RegExp][]) {
-            if (regex.test(name)) {
-                const mappedItems = mapAugmentedItem(item, key);
-                if (mappedItems) {
-                    relevantItems.push(...mappedItems.map((mapped) => ({
-                        time: new Date(),
-                        name: 'Automated Script',
-                        ...mapped,
-                        note: `Already crafted into ${item.amount}x ${name}`,
-                    })));
+            if (isBase) continue; // If it was a base item, skip checking augmented items
+            // Check if it matches any augmented items
+            for (const [key, regex] of Object.entries(AugmentedRelevantItemRegexDictionary) as [AugmentedRelevantItemKey, RegExp][]) {
+                if (regex.test(name)) {
+                    const mappedItems = mapAugmentedItem(item, key);
+                    if (mappedItems) {
+                        relevantItems.push(...mappedItems.map((mapped) => ({
+                            time: new Date(),
+                            name: storage.storageName,
+                            ...mapped,
+                            note: `Already crafted into ${item.amount}x ${name}`,
+                        })));
+                    }
+                    break; // Stop checking other augmented items
                 }
-                break; // Stop checking other augmented items
             }
         }
     }
@@ -288,22 +291,26 @@ const mapAugmentedItem = (augmentedItem: StoredItem, type: AugmentedRelevantItem
             baseItems.push({ resource: SheetResourceNames.Ingot, tier: getSheetTier(augmentedItem.tier), quantity: 100 * augmentedItem.amount });
             break;
         case 'RefinedPlankPackage':
-            baseItems.push(...mapAugmentedItem({ name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount, tier: augmentedItem.tier }, 'RefinedPlanks'));
+            baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount }, 'RefinedPlanks'));
             break;
         case 'RefinedClothPackage':
-            baseItems.push(...mapAugmentedItem({ name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount, tier: augmentedItem.tier }, 'RefinedCloth'));
+            baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount }, 'RefinedCloth'));
             break;
         case 'RefinedLeatherPackage':
-            baseItems.push(...mapAugmentedItem({ name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount, tier: augmentedItem.tier }, 'RefinedLeather'));
+            baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount }, 'RefinedLeather'));
             break;
         case 'RefinedBrickPackage':
-            baseItems.push(...mapAugmentedItem({ name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount, tier: augmentedItem.tier }, 'RefinedBrick'));
+            baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount }, 'RefinedBrick'));
             break;
         case 'RefinedIngotPackage':
-            baseItems.push(...mapAugmentedItem({ name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount, tier: augmentedItem.tier }, 'RefinedIngot'));
+            baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: augmentedItem.name.replace(' Package', ''), amount: 100 * augmentedItem.amount }, 'RefinedIngot'));
             break;
         default:
             break;
     }
     return baseItems;
+}
+
+const shouldIgnoreStorage = (inventory: StoredItem[]): boolean => {
+    return inventory[0]?.name === 'Stick';
 }

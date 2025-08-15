@@ -40,7 +40,6 @@ async function main() {
 
     console.info(`Attempting to scrape data...`);
     const tableData = await scrapeInventoriesTable(CLAIM_ID);
-    // Expected format: [Item, Name, Total, Tier, Rarity]
 
     console.info(`Getting Relevant Items...`);
     const relevantItems = mapRelevantItemData(tableData);

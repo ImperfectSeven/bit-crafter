@@ -38,7 +38,7 @@ export const scrapeInventoriesTable = async (claimId: string): Promise<Inventory
         console.log(`Found ${storageNodes.length} storage nodes`);
 
         for (const storageNode of storageNodes) {
-            const id = (storageNode as HTMLElement).getAttribute('id') || `unknown-${Math.random().toString(36).slice(2)}`;
+            const id = (storageNode as HTMLElement).id || `unknown-${Math.random().toString(36).slice(2)}`;
 
             const trigger = storageNode.querySelector('[data-slot="accordion-trigger"]');
             const rawName = Array.from(trigger?.childNodes || [])

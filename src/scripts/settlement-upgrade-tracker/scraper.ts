@@ -109,5 +109,8 @@ const storageIsStall = (storageName: string): boolean => {
 }
 
 const storageHasTriggerItem = (items: StoredItem[], triggerItem: string, triggerSlot: number): boolean => {
+    // If slot is negative, check the last slot
+    if (triggerSlot < 0) return items[items.length - 1]?.name.toLowerCase() === triggerItem.toLowerCase();
+    
     return (items[triggerSlot]?.name ?? '').toLowerCase()  === triggerItem.toLowerCase();
 }

@@ -1,5 +1,5 @@
 import * as puppeteer from 'puppeteer';
-import type { Inventory, StoredItem } from './types.js';
+import type { Inventory, StoredItem, ScraperSettings } from './types.js';
 
 /**
  * Scrapes the inventories table for the given claim from the Bitjita claims page.
@@ -7,7 +7,7 @@ import type { Inventory, StoredItem } from './types.js';
  * @param claimId The claim ID to scrape.
  * @returns A promise that resolves to the table data.
  */
-export const scrapeInventoriesTable = async (claimId: string): Promise<Inventory> => {
+export const scrapeInventoriesTable = async (claimId: string, opts?: ScraperSettings): Promise<Inventory> => {
     const url = `https://bitjita.com/claims/${claimId}`;
     const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -48,6 +48,7 @@ export const scrapeInventoriesTable = async (claimId: string): Promise<Inventory
                 .trim();
 
             const storageName = rawName.replace(/\s*\(.*?\)\s*$/, '').trim() || 'Unknown Storage';
+
             console.log(`Processing storage: ${storageName} [${id}]`);
 
             const itemBlocks = storageNode.querySelectorAll('[data-slot="accordion-content"] .bg-muted\\/50');
@@ -78,8 +79,33 @@ export const scrapeInventoriesTable = async (claimId: string): Promise<Inventory
 
         return results;
     });
-
-
     await browser.close();
+
+    /** Handle removing things based on settings here */
+    for (const storageId of Object.keys(inventories)) {
+        const storage = inventories[storageId];
+
+        if (opts?.onlyIncludeStalls && !storageIsStall(storage.storageName)) {
+            delete inventories[storageId];
+            continue;
+        }
+        if (opts?.triggerItem && opts?.triggerSlot) {
+            const hasTriggerItem = storageHasTriggerItem(storage.items, opts.triggerItem, opts.triggerSlot);
+            if ((opts.excludeTrigger && hasTriggerItem) || (opts.includeTrigger && !hasTriggerItem)) {
+                delete inventories[storageId];
+                continue;
+            }
+        }
+    }
+    console.log(`Filtered inventories`, { inventories });
+
     return inventories;
 };
+
+const storageIsStall = (storageName: string): boolean => {
+    return storageName.endsWith(' Stall');
+}
+
+const storageHasTriggerItem = (items: StoredItem[], triggerItem: string, triggerSlot: number): boolean => {
+    return (items[triggerSlot]?.name ?? '').toLowerCase()  === triggerItem.toLowerCase();
+}

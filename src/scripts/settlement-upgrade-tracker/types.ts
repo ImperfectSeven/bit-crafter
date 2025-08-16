@@ -52,6 +52,7 @@ export type Config = {
     GOOGLE_CREDENTIALS: string;
     SPREADSHEET_ID: string;
     CLAIM_ID: string;
+    SETTINGS?: ScraperSettings;
 };
 
 /** Shape of item data that is stored within a Claim */
@@ -64,3 +65,16 @@ export type StoredItem = {
 
 /** Represents a storage inventory on a claim and the items within it */
 export type Inventory = Record<string, { storageName: string; items: StoredItem[] }>;
+
+export type ScraperSettings = {
+    /** Name of item that triggers either inclusion or exclusion */
+    triggerItem?: string;
+    /** Slot index of the item that triggers either inclusion or exclusion */
+    triggerSlot?: number;
+    /** If true, exclude items that contain the trigger item */
+    excludeTrigger?: boolean;
+    /** If true, include items that contain the trigger item */
+    includeTrigger?: boolean;
+    /** If true, only include stalls in the results */
+    onlyIncludeStalls?: boolean;
+}

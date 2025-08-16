@@ -86,12 +86,14 @@ export const scrapeInventoriesTable = async (claimId: string, opts?: ScraperSett
         const storage = inventories[storageId];
 
         if (opts?.onlyIncludeStalls && !storageIsStall(storage.storageName)) {
+            console.debug(`Excluding non-stall storage: ${storage.storageName}`);
             delete inventories[storageId];
             continue;
         }
-        if (opts?.triggerItem && opts?.triggerSlot) {
+        if (opts?.triggerItem && opts?.triggerSlot !== undefined) {
             const hasTriggerItem = storageHasTriggerItem(storage.items, opts.triggerItem, opts.triggerSlot);
             if ((opts.excludeTrigger && hasTriggerItem) || (opts.includeTrigger && !hasTriggerItem)) {
+                console.debug(`Excluding storage due to trigger item condition: ${storage.storageName}`);
                 delete inventories[storageId];
                 continue;
             }

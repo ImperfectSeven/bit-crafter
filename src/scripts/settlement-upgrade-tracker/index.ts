@@ -1,3 +1,4 @@
+import { exit } from 'process';
 import { scrapeInventoriesTable } from './scraper.js';
 import { mapRelevantItemData, writeToSheet } from './sheet-helper.js';
 import type { Config } from './types.js';
@@ -50,4 +51,4 @@ async function main() {
     await writeToSheet(relevantItems.sort((a, b) => a.tier.toString().localeCompare(b.tier.toString())), { GOOGLE_CREDENTIALS, SPREADSHEET_ID });
 }
 
-main().catch(console.error);
+main().catch(console.error).finally(() => exit());

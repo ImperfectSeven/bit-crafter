@@ -98,7 +98,6 @@ export const mapRelevantItemData = (data: Inventory): ResourceSubmissionEntry[] 
     const relevantItems: ResourceSubmissionEntry[] = [];
 
     for (const [_storageId, storage] of Object.entries(data)) {
-        if (shouldIgnoreStorage(storage.items)) continue; // Skip this storage
         for (const item of storage.items) {
             const { name } = item;
             let isBase = false;
@@ -309,8 +308,4 @@ const mapAugmentedItem = (augmentedItem: StoredItem, type: AugmentedRelevantItem
             break;
     }
     return baseItems;
-}
-
-const shouldIgnoreStorage = (inventory: StoredItem[]): boolean => {
-    return inventory[0]?.name === 'Stick';
 }

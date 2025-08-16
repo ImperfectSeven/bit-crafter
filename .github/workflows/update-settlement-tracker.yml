@@ -25,3 +25,4 @@ jobs:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           CLAIM_ID: ${{ secrets.CLAIM_ID }}
+          SETTINGS: ${{ vars.SETTINGS }}

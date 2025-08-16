@@ -1,17 +1,19 @@
+import { exit } from 'process';
 import { scrapeInventoriesTable } from './scraper.js';
 import { mapRelevantItemData, writeToSheet } from './sheet-helper.js';
 import type { Config } from './types.js';
 
 /** Dynamically load config from env or local file */
 async function getConfig(): Promise<Config> {
-    const { GOOGLE_CREDENTIALS, SPREADSHEET_ID, CLAIM_ID } = process.env;
+    const { GOOGLE_CREDENTIALS, SPREADSHEET_ID, CLAIM_ID, SETTINGS } = process.env;
     // Try to load from environment variables first
-    if (GOOGLE_CREDENTIALS && SPREADSHEET_ID && CLAIM_ID) {
+    if (GOOGLE_CREDENTIALS && SPREADSHEET_ID && CLAIM_ID && SETTINGS) {
         console.debug('Loading environment variables...');
         return {
             GOOGLE_CREDENTIALS,
             SPREADSHEET_ID,
             CLAIM_ID,
+            SETTINGS: SETTINGS ? JSON.parse(SETTINGS) : undefined
         };
     }
 
@@ -26,6 +28,7 @@ async function getConfig(): Promise<Config> {
             GOOGLE_CREDENTIALS: LOCAL_ENV.GOOGLE_CREDENTIALS,
             SPREADSHEET_ID: LOCAL_ENV.SPREADSHEET_ID,
             CLAIM_ID: LOCAL_ENV.CLAIM_ID,
+            SETTINGS: LOCAL_ENV.SETTINGS,
         };
     } catch (err) {
         console.error('Failed to load environment variables', err);
@@ -36,10 +39,10 @@ async function getConfig(): Promise<Config> {
 }
 
 async function main() {
-    const { GOOGLE_CREDENTIALS, SPREADSHEET_ID, CLAIM_ID } = await getConfig();
+    const { GOOGLE_CREDENTIALS, SPREADSHEET_ID, CLAIM_ID, SETTINGS } = await getConfig();
 
     console.info(`Attempting to scrape data...`);
-    const tableData = await scrapeInventoriesTable(CLAIM_ID);
+    const tableData = await scrapeInventoriesTable(CLAIM_ID, SETTINGS);
 
     console.info(`Getting Relevant Items...`);
     const relevantItems = mapRelevantItemData(tableData);
@@ -48,4 +51,4 @@ async function main() {
     await writeToSheet(relevantItems.sort((a, b) => a.tier.toString().localeCompare(b.tier.toString())), { GOOGLE_CREDENTIALS, SPREADSHEET_ID });
 }
 
-main().catch(console.error);
+main().catch(console.error).finally(() => exit());

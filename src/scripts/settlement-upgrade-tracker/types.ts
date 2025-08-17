@@ -71,6 +71,8 @@ export type ScraperSettings = {
     triggerItem?: string;
     /** Slot index of the item that triggers either inclusion or exclusion */
     triggerSlot?: number;
+    /** Quantity of the trigger item to check for. */
+    triggerItemQty?: number;
     /** If true, exclude items that contain the trigger item */
     excludeTrigger?: boolean;
     /** If true, include items that contain the trigger item */

@@ -90,8 +90,8 @@ export const scrapeInventoriesTable = async (claimId: string, opts?: ScraperSett
             delete inventories[storageId];
             continue;
         }
-        if (opts?.triggerItem && opts?.triggerSlot !== undefined) {
-            const hasTriggerItem = storageHasTriggerItem(storage.items, opts.triggerItem, opts.triggerSlot);
+        if (opts?.triggerItem) {
+            const hasTriggerItem = storageHasTriggerItem(storage.items, opts.triggerItem, opts.triggerSlot, opts.triggerItemQty);
             if ((opts.excludeTrigger && hasTriggerItem) || (opts.includeTrigger && !hasTriggerItem)) {
                 console.debug(`Excluding storage due to trigger item condition: ${storage.storageName}`);
                 delete inventories[storageId];
@@ -108,9 +108,12 @@ const storageIsStall = (storageName: string): boolean => {
     return storageName.endsWith(' Stall');
 }
 
-const storageHasTriggerItem = (items: StoredItem[], triggerItem: string, triggerSlot: number): boolean => {
+const storageHasTriggerItem = (items: StoredItem[], triggerItem: string, triggerSlot?: number, triggerItemQty?: number): boolean => {
+    if (triggerSlot === undefined) {
+        return items.some(item => item.name.toLowerCase() === triggerItem.toLowerCase() && triggerItemQty !== undefined && triggerItemQty === item.amount);
+    }
     // If slot is negative, check the last slot
-    if (triggerSlot < 0) return items[items.length - 1]?.name.toLowerCase() === triggerItem.toLowerCase();
+    if (triggerSlot < 0) return items[items.length - 1]?.name.toLowerCase() === triggerItem.toLowerCase() && triggerItemQty !== undefined && triggerItemQty === items[items.length - 1].amount;
     
-    return (items[triggerSlot]?.name ?? '').toLowerCase()  === triggerItem.toLowerCase();
+    return (items[triggerSlot]?.name ?? '').toLowerCase()  === triggerItem.toLowerCase() && triggerItemQty !== undefined && triggerItemQty === items[triggerSlot].amount;
 }

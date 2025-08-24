@@ -236,35 +236,51 @@ const mapAugmentedItem = (augmentedItem: StoredItem, type: AugmentedRelevantItem
             // it is then recursive in that the refined cloth now needs 5 of the previous tier's cloth, 1 animal hair, and 1 straw etc.
             for (let t = 0; t < augmentedItem.tier; t++) {
                 baseItems.push({ resource: SheetResourceNames.Cloth, tier: getSheetTier(augmentedItem.tier - t), quantity: 5 * Math.pow(2, t) * augmentedItem.amount });
-                baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: augmentedItem.name.replace('Refined ', '').replace(' Cloth', ' Textile'), amount: augmentedItem.amount }, 'Textile'));
+                // baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: augmentedItem.name.replace('Refined ', '').replace(' Cloth', ' Textile'), amount: augmentedItem.amount }, 'Textile'));
+                baseItems.push({ resource: SheetResourceNames.AnimalHair, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.Straw, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
             }
             break;
         }
         case 'RefinedLeather': {
             for (let t = 0; t < augmentedItem.tier; t++) {
                 baseItems.push({ resource: SheetResourceNames.Leather, tier: getSheetTier(augmentedItem.tier - t), quantity: 5 * Math.pow(2, t) * augmentedItem.amount });
-                baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: 'Leather Treatment', amount: Math.pow(2, t) * augmentedItem.amount }, 'LeatherTreatment'));
+                // baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: 'Leather Treatment', amount: augmentedItem.amount }, 'LeatherTreatment'));
+                baseItems.push({ resource: SheetResourceNames.Braxite, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.FishOil, tier: getSheetTier(augmentedItem.tier - t), quantity: 2 * Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.Vial, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.WaterBucket, tier: SheetTiers[1], quantity: Math.pow(2, t) * augmentedItem.amount });
             }
             break;
         }
         case 'RefinedBrick': {
             for (let t = 0; t < augmentedItem.tier; t++) {
                 baseItems.push({ resource: SheetResourceNames.Brick, tier: getSheetTier(augmentedItem.tier - t), quantity: 5 * Math.pow(2, t) * augmentedItem.amount });
-                baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: 'Firesand', amount: Math.pow(2, t) * augmentedItem.amount }, 'Firesand'));
+                // baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: 'Firesand', amount: augmentedItem.amount }, 'Firesand'));
+                baseItems.push({ resource: SheetResourceNames.Gypsite, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.Shell, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
             }
             break;
         }
         case 'RefinedIngot': {
             for (let t = 0; t < augmentedItem.tier; t++) {
                 baseItems.push({ resource: SheetResourceNames.Ingot, tier: getSheetTier(augmentedItem.tier - t), quantity: 5 * Math.pow(2, t) * augmentedItem.amount });
-                baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: 'Metal Solvent', amount: Math.pow(2, t) * augmentedItem.amount }, 'MetalSolvent'));
+                // baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: 'Metal Solvent', amount: augmentedItem.amount }, 'MetalSolvent'));
+                baseItems.push({ resource: SheetResourceNames.CitricBerry, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.Pebble, tier: getSheetTier(augmentedItem.tier - t), quantity: 5 * Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.Vial, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.WaterBucket, tier: SheetTiers[1], quantity: Math.pow(2, t) * augmentedItem.amount });
             }
             break;
         }
         case 'RefinedPlanks': {
             for (let t = 0; t < augmentedItem.tier; t++) {
                 baseItems.push({ resource: SheetResourceNames.Plank, tier: getSheetTier(augmentedItem.tier - t), quantity: 5 * Math.pow(2, t) * augmentedItem.amount });
-                baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: 'Wood Polish', amount: Math.pow(2, t) * augmentedItem.amount }, 'WoodPolish'));
+                // baseItems.push(...mapAugmentedItem({ ...augmentedItem, name: 'Wood Polish', amount: augmentedItem.amount }, 'WoodPolish'));
+                baseItems.push({ resource: SheetResourceNames.Resin, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.CropOil, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.Pitch, tier: SheetTiers[1], quantity: 5 * Math.pow(2, t) * augmentedItem.amount });
+                baseItems.push({ resource: SheetResourceNames.Vial, tier: getSheetTier(augmentedItem.tier - t), quantity: Math.pow(2, t) * augmentedItem.amount });
             }
             break;
         }

@@ -43,6 +43,7 @@ async function main() {
 
     console.info(`Attempting to scrape data...`);
     const tableData = await scrapeInventoriesTable(CLAIM_ID, SETTINGS);
+    if (Object.keys(tableData).length === 0) throw new Error('No inventory data found');
 
     console.info(`Getting Relevant Items...`);
     const relevantItems = mapRelevantItemData(tableData);

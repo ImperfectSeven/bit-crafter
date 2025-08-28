@@ -28,7 +28,7 @@ export const scrapeInventoriesTable = async (claimId: string, opts?: ScraperSett
     }
 
     // Capture a screenshot
-    await page.screenshot({ path: `screenshots/${claimId}-inventories.png`, fullPage: true });
+    await page.screenshot({ path: `${claimId}-inventories.png`, fullPage: true });
 
     page.on('console', async msg => {
         const args = msg.args();

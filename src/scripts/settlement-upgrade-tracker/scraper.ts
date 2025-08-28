@@ -47,7 +47,7 @@ export const scrapeInventoriesTable = async (claimId: string, opts?: ScraperSett
                 .join(' ')
                 .trim();
 
-            const storageName = rawName.replace(/\s*\(.*?\)\s*$/, '').trim() || 'Unknown Storage';
+            const storageName = `${rawName.replace(/\s*\(.*?\)\s*$/, '').trim() || 'Unknown Storage'} ${id}`;
 
             console.log(`Processing storage: ${storageName} [${id}]`);
 

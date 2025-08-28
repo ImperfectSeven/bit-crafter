@@ -27,6 +27,9 @@ export const scrapeInventoriesTable = async (claimId: string, opts?: ScraperSett
         await new Promise(resolve => setTimeout(resolve, 10000));
     }
 
+    // Capture a screenshot
+    await page.screenshot({ path: `screenshots/${claimId}-inventories.png`, fullPage: true });
+
     page.on('console', async msg => {
         const args = msg.args();
         const values = await Promise.all(args.map(arg => arg.jsonValue()));

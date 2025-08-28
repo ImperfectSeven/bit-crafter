@@ -26,3 +26,10 @@ jobs:
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           CLAIM_ID: ${{ secrets.CLAIM_ID }}
           SETTINGS: ${{ vars.SETTINGS }}
+
+      - name: Upload screenshot artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventories-screenshot
+          path: inventories.png

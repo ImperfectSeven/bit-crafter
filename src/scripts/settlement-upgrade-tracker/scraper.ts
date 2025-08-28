@@ -24,7 +24,7 @@ export const scrapeInventoriesTable = async (claimId: string, opts?: ScraperSett
     if (inventoriesTabHandle) {
         console.debug('Found Inventories tab, clicking...');
         await (inventoriesTabHandle.asElement() as puppeteer.ElementHandle)?.click();
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 10000));
     }
 
     page.on('console', async msg => {
